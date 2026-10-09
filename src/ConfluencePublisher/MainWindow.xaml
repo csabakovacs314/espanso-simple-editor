@@ -1,0 +1,145 @@
+<Window x:Class="ConfluencePublisher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Confluence Publisher" Width="860" Height="900" MinWidth="680" MinHeight="640"
+        WindowStartupLocation="CenterScreen" FontFamily="{StaticResource UiFont}" FontSize="13.5"
+        Background="{StaticResource GroundBrush}" Foreground="{StaticResource InkBrush}" Closing="Window_Closing">
+    <Grid Margin="22,16,22,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Publish a guide to Confluence" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Text="Turns a Markdown guide into a Confluence page with its pictures. Nothing is written until you confirm the parent page and what will happen."/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- 1. Sign in -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="1  Sign in"/>
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Site" VerticalAlignment="Center" Foreground="{StaticResource LabelBrush}"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="SiteBox" Margin="0,0,0,8" ToolTip="For example yourcompany.atlassian.net"/>
+                            <TextBlock Grid.Row="1" Text="E-mail" VerticalAlignment="Center" Foreground="{StaticResource LabelBrush}"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="EmailBox" Margin="0,0,0,8" ToolTip="The e-mail address of your Atlassian account"/>
+                            <TextBlock Grid.Row="2" Text="API token" VerticalAlignment="Center" Foreground="{StaticResource LabelBrush}"/>
+                            <Grid Grid.Row="2" Grid.Column="1" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="TokenBox"/>
+                                <Button Grid.Column="1" Style="{StaticResource QuietButton}" Margin="8,0,0,0" Content="Create a token…"
+                                        Foreground="{StaticResource AccentDarkBrush}" Click="CreateToken_Click"
+                                        ToolTip="Opens id.atlassian.com, where you create an API token for your account"/>
+                            </Grid>
+                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                                <CheckBox x:Name="RememberBox" Content="Remember the token on this PC (encrypted for your Windows account)" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button x:Name="TestButton" Content="Test sign-in" Click="Test_Click" MinWidth="120"/>
+                            <TextBlock x:Name="SignInText" VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- 2. The guide -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="2  Guide"/>
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Markdown file" VerticalAlignment="Center" Foreground="{StaticResource LabelBrush}"/>
+                            <TextBox Grid.Column="1" x:Name="FileBox" IsReadOnly="True" Margin="0,0,0,8"/>
+                            <Button Grid.Column="2" Content="Browse…" Margin="8,0,0,8" Click="Browse_Click"/>
+                            <TextBlock Grid.Row="1" Text="Page title" VerticalAlignment="Center" Foreground="{StaticResource LabelBrush}"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="TitleBox"/>
+                        </Grid>
+                        <TextBlock x:Name="PicturesText" Margin="130,10,0,0" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 3. Parent page -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="3  Parent page"/>
+                        <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,2,0,8"
+                                   Text="The guide goes under this page. Paste the parent page's link (or ID), or search for it by title."/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="ParentBox" KeyDown="ParentBox_KeyDown"
+                                     ToolTip="A page link such as https://yourcompany.atlassian.net/wiki/spaces/TEAM/pages/123456/Tools, a page ID, or words from its title"/>
+                            <Button Grid.Column="1" x:Name="FindButton" Content="Find" Margin="8,0,0,0" MinWidth="90" Click="Find_Click"/>
+                        </Grid>
+                        <ListBox x:Name="ResultsList" Margin="0,8,0,0" MaxHeight="190" Visibility="Collapsed"
+                                 SelectionChanged="ResultsList_SelectionChanged" Background="{StaticResource PanelBrush}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="2,3">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Path}" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Border x:Name="ParentCard" Margin="0,10,0,0" Padding="12,8" CornerRadius="7" Visibility="Collapsed"
+                                Background="{StaticResource AccentSoftBrush}" BorderBrush="{StaticResource TriggerChipLineBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock x:Name="ParentLabel" Text="Selected parent" FontSize="12" Foreground="{StaticResource AccentDarkBrush}"/>
+                                <TextBlock x:Name="ParentPathText" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock x:Name="ParentProblemText" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource ErrorBrush}" Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Log -->
+                <TextBlock Style="{StaticResource FieldLabel}" Text="Progress"/>
+                <TextBox x:Name="LogBox" IsReadOnly="True" MinHeight="110" MaxHeight="200" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" FontFamily="{StaticResource MonoFont}" FontSize="12.5"
+                         VerticalContentAlignment="Top"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="OpenLinkBlock" VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed">
+                <Hyperlink Click="OpenPage_Click" Foreground="{StaticResource AccentDarkBrush}">
+                    <Run x:Name="PageLinkText"/>
+                </Hyperlink>
+            </TextBlock>
+            <Button Grid.Column="1" x:Name="PublishButton" Content="Publish…" Style="{StaticResource PrimaryButton}" MinWidth="140" Click="Publish_Click"/>
+        </Grid>
+    </Grid>
+</Window>

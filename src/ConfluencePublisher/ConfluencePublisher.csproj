@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- Lets the project compile on non-Windows build machines too; harmless on Windows. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>ConfluencePublisher</AssemblyName>
+    <RootNamespace>ConfluencePublisher</RootNamespace>
+    <Version>0.1.6</Version>
+    <Product>Confluence Publisher</Product>
+    <Description>Publishes the Espanso guide (Markdown) to a Confluence Cloud page, after you confirm where.</Description>
+    <Copyright>Idea by Csaba Kovacs</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Publisher.Core\Publisher.Core.csproj" />
+  </ItemGroup>
+
+</Project>

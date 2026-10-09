@@ -11,23 +11,28 @@ if errorlevel 1 (
 )
 
 echo.
-echo [1/4] Running the tests (they never touch your Espanso files)...
+echo [1/5] Running the tests (they never touch your Espanso files)...
 dotnet test tests\EspansoEditor.Tests -c Release --nologo -v quiet
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/4] Small exe (needs the .NET 10 Desktop Runtime, which a .NET 10 SDK includes)...
+echo [2/5] Small exe (needs the .NET 10 Desktop Runtime, which a .NET 10 SDK includes)...
 dotnet publish src\EspansoEditor.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist\small --nologo -v quiet
 if errorlevel 1 goto :fail
 
 echo.
-echo [3/4] Portable exe (runs on any 64-bit Windows, no .NET needed; larger)...
+echo [3/5] Portable exe (runs on any 64-bit Windows, no .NET needed; larger)...
 dotnet publish src\EspansoEditor.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o dist\portable --nologo -v quiet
 if errorlevel 1 goto :fail
 
 echo.
-echo [4/4] snipconv checker...
+echo [4/5] snipconv checker...
 dotnet publish src\snipconv -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist\snipconv --nologo -v quiet
+if errorlevel 1 goto :fail
+
+echo.
+echo [5/5] Confluence publisher...
+dotnet publish src\ConfluencePublisher -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist\publisher --nologo -v quiet
 if errorlevel 1 goto :fail
 
 echo.
@@ -44,6 +49,7 @@ echo Done.
 echo   dist\small\EspansoSimpleEditor.exe
 echo   dist\portable\EspansoSimpleEditor.exe
 echo   dist\snipconv\snipconv.exe   (try: dist\snipconv\snipconv.exe check "%%APPDATA%%\espanso")
+echo   dist\publisher\ConfluencePublisher.exe   (puts docs\Espanso-Guide-Short.md on a Confluence page)
 echo.
 pause
 exit /b 0

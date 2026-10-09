@@ -5,7 +5,12 @@ Espanso-Guide.md / .jira.txt         full guide
 Espanso-Guide-Short.md / .jira.txt   short guide for colleagues
 images\                              mockup screenshots used by both
 
-Jira Cloud (and Confluence Cloud)
+Confluence Cloud (easiest)
+  Run dist\publisher\ConfluencePublisher.exe, sign in, pick the parent page and press Publish.
+  It asks you to confirm the parent page and whether it creates or updates a page before writing anything,
+  and attaches the pictures for you.
+
+Jira Cloud
   1. Paste the .md file's text into the description.
   2. Drag the PNG files from images\ to where each picture goes.
 

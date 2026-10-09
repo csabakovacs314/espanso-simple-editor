@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.6 (2026-10-09)
+
+- **New: ConfluencePublisher** (`dist\publisher\ConfluencePublisher.exe`), a separate small app that publishes the guide to a Confluence Cloud page with its pictures attached.
+  - You pick the parent page by link, ID or title search; it shows as `Space › … › Parent`.
+  - Before writing, a confirmation shows the exact parent path, create or update (version N to N+1), title, site and pictures. Cancel is the default.
+  - Only a page directly under the chosen parent with the same title is updated; it is never moved. Same-titled pages elsewhere are listed and left alone.
+  - If the page changes or moves after you confirm, nothing is written.
+  - Signs in with your Atlassian e-mail and API token. The token is kept only if you tick "Remember", encrypted for your Windows account (DPAPI), and is never written to the log.
+- Markdown to Confluence storage format: headings, lists (nested), bold, italic, code, links, tables, code blocks, pictures, "In short" / Tip / Warning boxes and a table of contents.
+- **Code review fixes (before release):** the remembered token could have been saved unencrypted next to the encrypted copy; a link right after a quote mark, code fences such as ` ```c# ` or indented ones, and control characters could produce a page Confluence refuses; the "page moved" check now compares the parent page itself; children are read in every batch Confluence sends; a create re-checks that the page has not appeared meanwhile; a link from another Atlassian site is refused; a failed picture upload says the text is saved and to publish again.
+- 36 new tests (145 in all). No change to the editor itself.
+
 ## 0.1.5 (2026-10-09)
 
 - **New: guides for Jira.** `docs\Espanso-Guide-Short` (for colleagues) and `docs\Espanso-Guide` (full), each as Markdown for Jira Cloud and `.jira.txt` wiki markup for Jira Server, with four mockup screenshots in `docs\images`.

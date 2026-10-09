@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\EspansoEditor.Core\EspansoEditor.Core.csproj" />
+    <ProjectReference Include="..\..\src\Publisher.Core\Publisher.Core.csproj" />
   </ItemGroup>
 
 </Project>

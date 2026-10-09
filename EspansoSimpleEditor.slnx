@@ -2,6 +2,8 @@
   <Folder Name="/src/">
     <Project Path="src/EspansoEditor.App/EspansoEditor.App.csproj" />
     <Project Path="src/EspansoEditor.Core/EspansoEditor.Core.csproj" />
+    <Project Path="src/Publisher.Core/Publisher.Core.csproj" />
+    <Project Path="src/ConfluencePublisher/ConfluencePublisher.csproj" />
     <Project Path="src/snipconv/snipconv.csproj" />
   </Folder>
   <Folder Name="/tests/">
