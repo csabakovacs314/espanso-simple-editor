@@ -1,4 +1,4 @@
-# Espanso Simple Editor 0.1.0
+# Espanso Simple Editor 0.1.1
 
 Edit your Espanso snippets one at a time, as text, in a PhraseExpress-style window. You never see YAML. On save the editor writes valid Espanso YAML back, and Espanso reloads it by itself.
 
@@ -44,6 +44,10 @@ dist\snipconv\snipconv.exe check "%APPDATA%\espanso"
 dist\snipconv\snipconv.exe resave "%APPDATA%\espanso\match\base.yml" "%TEMP%\base-resaved.yml"
 ```
 
+## If the Espanso status or folder looks wrong
+
+The status pill's tooltip says how it decided. Every espanso command the app runs is logged in `%LOCALAPPDATA%\EspansoSimpleEditor\espanso-cli.log`.
+
 ## Not in 0.1 yet
 
 - **Formatted text:** bold, italic and links (Espanso `markdown:`/`html:`). Those snippets open read-only for now.
@@ -57,4 +61,4 @@ dist\snipconv\snipconv.exe resave "%APPDATA%\espanso\match\base.yml" "%TEMP%\bas
 - `src\EspansoEditor.Core`: reading, writing, checking and saving. No UI, fully tested.
 - `src\EspansoEditor.App`: the WPF window.
 - `src\snipconv`: the command-line checker.
-- `tests\EspansoEditor.Tests`: 42 tests, including your file's style (groups, trailing spaces, no final line break).
+- `tests\EspansoEditor.Tests`: 51 tests, including your file's style (groups, trailing spaces, no final line break).

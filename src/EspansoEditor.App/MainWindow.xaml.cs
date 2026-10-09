@@ -572,28 +572,37 @@ public partial class MainWindow : Window, IEditorHost
         ShowToast(Kind.Info, "Restarting Espanso…", "Running espanso restart.");
         var r = await Task.Run(EspansoCli.Restart);
         if (r.Started && r.ExitCode == 0) ShowToast(Kind.Ok, "Espanso restarted", "It now uses the files as saved.");
-        else ShowToast(Kind.Warn, "Could not restart Espanso", r.Output.Length > 0 ? r.Output : "The espanso command did not answer.");
+        else if (r.ExitCode == EspansoCli.CmdNotRecognized) ShowToast(Kind.Warn, "Could not restart Espanso", "Windows does not know the espanso command. Restart Espanso from its tray icon instead.");
+        else ShowToast(Kind.Warn, "Could not restart Espanso", r.Output.Length > 0 ? r.Output : $"espanso restart ended with code {r.ExitCode}.");
+        await Task.Delay(2000); // give the new Espanso a moment to start before checking
         await RefreshEspansoStatusAsync();
     }
 
     private async Task RefreshEspansoStatusAsync()
     {
         EspansoStatusText.Text = "Checking Espanso…";
-        var running = await Task.Run(EspansoCli.IsRunning);
-        switch (running)
+        EspansoPill.ToolTip = null;
+        var status = await Task.Run(EspansoCli.GetStatus);
+        EspansoPill.ToolTip = status.Detail + "\nDetails of every espanso call: " + System.IO.Path.Combine(App.DataDir, "espanso-cli.log");
+        switch (status.State)
         {
-            case true:
+            case EspansoState.Running:
                 EspansoStatusText.Text = "Espanso running · reloads after each save";
                 EspansoPill.Background = (Brush)FindResource("AccentSoftBrush");
                 EspansoStatusText.Foreground = (Brush)FindResource("AccentDarkBrush");
                 break;
-            case false:
+            case EspansoState.NotRunning:
                 EspansoStatusText.Text = "Espanso is not running";
                 EspansoPill.Background = (Brush)FindResource("WarnSoftBrush");
                 EspansoStatusText.Foreground = (Brush)FindResource("WarnBrush");
                 break;
-            default:
+            case EspansoState.NotInstalled:
                 EspansoStatusText.Text = "espanso command not found";
+                EspansoPill.Background = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xEA));
+                EspansoStatusText.Foreground = (Brush)FindResource("MutedBrush");
+                break;
+            default:
+                EspansoStatusText.Text = "Espanso status unknown";
                 EspansoPill.Background = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xEA));
                 EspansoStatusText.Foreground = (Brush)FindResource("MutedBrush");
                 break;
