@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.8 (2026-10-09)
+
+- **Guides: download link.** Both guides now link to `dist\small\EspansoSimpleEditor.exe` instead of "ask Csaba". Published with confluence-publisher 0.1.1 or later, the exe is attached to the page and colleagues download it from there.
+- The guides explain the one-time .NET 10 Desktop Runtime install and the Windows warning for an unsigned exe.
+- `.jira.txt` versions made again with md2jira from confluence-publisher 0.1.1 (the download becomes a link to the issue attachment).
+- No change to the editor itself. 109 tests.
+
 ## 0.1.7 (2026-10-09)
 
 - **Moved: the Confluence publisher and md2jira** now live in their own repo, [confluence-publisher](https://github.com/csabakovacs314/confluence-publisher), so any Markdown can be published, not only these guides. This repo is the editor again.

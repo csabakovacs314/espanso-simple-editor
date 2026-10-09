@@ -10,7 +10,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>EspansoSimpleEditor</AssemblyName>
     <RootNamespace>EspansoEditor.App</RootNamespace>
-    <Version>0.1.7</Version>
+    <Version>0.1.8</Version>
     <Product>Espanso Simple Editor</Product>
     <Description>Edit Espanso snippets as plain text, never YAML.</Description>
     <Copyright>Idea by Csaba Kovacs</Copyright>

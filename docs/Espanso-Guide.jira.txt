@@ -64,7 +64,9 @@ _Mockup: pick the Espanso folder once; it opens by itself next time._
 
 h3. Getting it
 
-* Ask Csaba for the latest zip. Run {{dist\small\EspansoSimpleEditor.exe}}, which needs the *.NET 10 Desktop Runtime*.
+* [Download EspansoSimpleEditor.exe|^EspansoSimpleEditor.exe] (under 1 MB). Put it in any folder and run it.
+* It needs the free [.NET 10 Desktop Runtime|https://dotnet.microsoft.com/download/dotnet/10.0] once: on that page pick ".NET Desktop Runtime", Windows x64. If the app does not start, this is the reason.
+* The file is not code-signed yet, so Windows may warn: choose "Keep" in the browser, then "More info", "Run anyway".
 * Or build it from source with {{BUILD.bat}}, which needs the *.NET 10 SDK*.
 
 h3. Editing a snippet

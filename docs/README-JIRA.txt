@@ -11,14 +11,18 @@ Confluence Cloud (easiest)
   It asks you to confirm the parent page and whether it creates or updates a page before writing anything,
   and attaches the pictures for you.
 
+  The guides link to dist\small\EspansoSimpleEditor.exe, so the publisher attaches the exe too and
+  colleagues get a working download link. Build the exe first (BUILD.bat) so it is there.
+
 Jira Cloud
   1. Paste the .md file's text into the description.
-  2. Drag the PNG files from images\ to where each picture goes.
+  2. Drag the PNG files from images\ to where each picture goes, and attach dist\small\EspansoSimpleEditor.exe
+     (the download link in the text points at a local path, so replace it with the attachment).
 
 Jira Server or Data Center
-  1. Attach the PNG files from images\ to the issue.
+  1. Attach the PNG files from images\ and dist\small\EspansoSimpleEditor.exe to the issue.
   2. Paste the .jira.txt file's text into the Text (wiki markup) tab.
-     The pictures show by themselves, because they refer to the attachments by name.
+     The pictures and the download link work by themselves, because they refer to the attachments by name.
 
 To make the .jira.txt files again after editing a .md file (needs Python 3), use md2jira.py from
 confluence-publisher:

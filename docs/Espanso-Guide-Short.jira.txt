@@ -35,7 +35,7 @@ Espanso normally needs its snippets written in special text files. *Espanso Simp
 
 _Mockup: a Jira template open in the editor._
 
-Ask Csaba for a copy.
+*Get it:* [Download EspansoSimpleEditor.exe|^EspansoSimpleEditor.exe] (under 1 MB, just run it). It needs the free [.NET 10 Desktop Runtime|https://dotnet.microsoft.com/download/dotnet/10.0] once: on that page pick ".NET Desktop Runtime", Windows x64. If Windows warns about the download, choose "Keep", then "More info", "Run anyway".
 
 {tip:title=Tip}
 If {{/jira}} fires before you can finish {{/jirauao}}, open *Triggers…* and click *Whole word only where needed*.

@@ -1,4 +1,4 @@
-# Espanso Simple Editor 0.1.7
+# Espanso Simple Editor 0.1.8
 
 Edit your Espanso snippets one at a time, as text, in a PhraseExpress-style window with a dark theme. You never see YAML. On save the editor writes valid Espanso YAML back, and Espanso reloads it by itself.
 
