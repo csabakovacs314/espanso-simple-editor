@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EspansoEditor.App/EspansoEditor.App.csproj" />
+    <Project Path="src/EspansoEditor.Core/EspansoEditor.Core.csproj" />
+    <Project Path="src/snipconv/snipconv.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EspansoEditor.Tests/EspansoEditor.Tests.csproj" />
+  </Folder>
+</Solution>

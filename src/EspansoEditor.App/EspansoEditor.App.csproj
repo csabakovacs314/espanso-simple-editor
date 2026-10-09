@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- Lets the project compile on non-Windows build machines too; harmless on Windows. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>EspansoSimpleEditor</AssemblyName>
+    <RootNamespace>EspansoEditor.App</RootNamespace>
+    <Version>0.1.0</Version>
+    <Product>Espanso Simple Editor</Product>
+    <Description>Edit Espanso snippets as plain text, never YAML.</Description>
+    <Copyright>Idea by Csaba Kovacs</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EspansoEditor.Core\EspansoEditor.Core.csproj" />
+  </ItemGroup>
+
+</Project>

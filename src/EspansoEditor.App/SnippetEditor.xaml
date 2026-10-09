@@ -1,0 +1,109 @@
+<UserControl x:Class="EspansoEditor.App.SnippetEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="{StaticResource UiFont}" FontSize="13.5" Background="#FFFFFF">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="22,16,22,24">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Text="Description" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="DescriptionBox" FontSize="15" FontWeight="SemiBold" TextChanged="DescriptionBox_TextChanged"
+                             ToolTip="Optional. Shown in Espanso's search bar and in the library on the left."/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,12,0" MinWidth="230">
+                    <TextBlock Text="Saved in" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="LocationBox" MinHeight="34" VerticalContentAlignment="Center" DisplayMemberPath="Text"
+                              SelectionChanged="LocationBox_SelectionChanged"
+                              ToolTip="The Espanso file and group this snippet is stored in."/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Button x:Name="PopOutButton" Click="PopOut_Click" Margin="0,0,8,0" ToolTip="Open this snippet in its own window">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE8A7;" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Own window"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="DeleteButton" Click="Delete_Click" ToolTip="Delete this snippet (removed from the file when you save)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE74D;" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Delete"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <Border x:Name="Banner" Visibility="Collapsed" Margin="0,14,0,0" Padding="12,10" CornerRadius="8" BorderThickness="1">
+                <TextBlock x:Name="BannerText" TextWrapping="Wrap"/>
+            </Border>
+
+            <Border Margin="0,14,0,0" BorderBrush="#CFCFC8" BorderThickness="1" CornerRadius="10" Background="#FFFFFF">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="{StaticResource SideBrush}" BorderBrush="{StaticResource SoftLineBrush}"
+                            BorderThickness="0,0,0,1" CornerRadius="10,10,0,0" Padding="10,6">
+                        <DockPanel>
+                            <Button x:Name="InsertButton" DockPanel.Dock="Right" Click="Insert_Click" ToolTip="Insert a date, the clipboard, a question and more">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Insert"/>
+                                    <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE70D;" FontSize="10" VerticalAlignment="Center" Margin="6,1,0,0"/>
+                                </StackPanel>
+                            </Button>
+                            <TextBlock VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="12.5" TextTrimming="CharacterEllipsis"
+                                       Text="Text Espanso types. Coloured chips are filled in when it runs; double-click a chip to change it."/>
+                        </DockPanel>
+                    </Border>
+                    <RichTextBox x:Name="Editor" IsDocumentEnabled="True" MinHeight="240" MaxHeight="560" BorderThickness="0" Padding="12,10"
+                                 AcceptsTab="True" AcceptsReturn="True" SpellCheck.IsEnabled="True"
+                                 VerticalScrollBarVisibility="Auto" TextChanged="Editor_TextChanged"/>
+                </DockPanel>
+            </Border>
+
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Trigger" Style="{StaticResource FieldLabel}"/>
+                        <WrapPanel x:Name="TriggerPanel"/>
+                        <TextBlock x:Name="TriggerError" Foreground="{StaticResource ErrorBrush}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Visibility="Collapsed" Text="A snippet needs at least one trigger before it can be saved."/>
+                        <CheckBox x:Name="WordBox" Margin="0,12,0,0" Content="Only as a whole word" Checked="Option_Changed" Unchecked="Option_Changed"
+                                  ToolTip="Espanso word: true. The trigger only fires when it is a word on its own."/>
+                        <CheckBox x:Name="CaseBox" Margin="0,8,0,0" Content="Follow the case I type (:Br gives Best regards)" Checked="Option_Changed" Unchecked="Option_Changed"
+                                  ToolTip="Espanso propagate_case: true."/>
+                        <CheckBox x:Name="NewlineBox" Margin="0,8,0,0" Content="End with a line break" Checked="Newline_Changed" Unchecked="Newline_Changed"
+                                  ToolTip="Adds a line break after the last line, like most multi-line Espanso snippets."/>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <TextBlock Text="Typing method" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="ModeBox" MinWidth="200" MinHeight="30" VerticalContentAlignment="Center" SelectionChanged="ModeBox_SelectionChanged">
+                                <ComboBoxItem Content="Automatic"/>
+                                <ComboBoxItem Content="Paste from clipboard"/>
+                                <ComboBoxItem Content="Type key by key"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource Card}" Background="#FBFBF9">
+                    <StackPanel>
+                        <TextBlock Text="Espanso will type" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock x:Name="PreviewText" TextWrapping="Wrap" FontSize="14" LineHeight="21"/>
+                        <TextBlock Margin="0,10,0,0" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
+                                   Text="Example values for right now. Grey parts are filled in when the snippet runs."/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <StackPanel x:Name="IssuesPanel" Margin="0,12,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
