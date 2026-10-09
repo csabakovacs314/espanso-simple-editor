@@ -1,4 +1,4 @@
-# Espanso Simple Editor 0.1.6
+# Espanso Simple Editor 0.1.7
 
 Edit your Espanso snippets one at a time, as text, in a PhraseExpress-style window with a dark theme. You never see YAML. On save the editor writes valid Espanso YAML back, and Espanso reloads it by itself.
 
@@ -11,7 +11,6 @@ Idea by Csaba Kovacs.
   - `dist\small\EspansoSimpleEditor.exe` (small, needs .NET 10)
   - `dist\portable\EspansoSimpleEditor.exe` (larger, runs on any 64-bit Windows)
   - `dist\snipconv\snipconv.exe` (the checker, see below)
-  - `dist\publisher\ConfluencePublisher.exe` (puts the guide on a Confluence page, see below)
 
 ## Using it
 
@@ -89,27 +88,12 @@ The app uses a dark theme: Windows 11 style dark controls and a dark title bar (
 
 `docs\README-JIRA.txt` has the steps.
 
-### Publish the guide to Confluence: ConfluencePublisher
-
-`dist\publisher\ConfluencePublisher.exe` makes the guide a Confluence Cloud page, pictures included, in one go. It never writes before you confirm where.
-
-1. **Sign in:** your site (`yourcompany.atlassian.net`), your Atlassian e-mail and an API token ("Create a token…" opens the Atlassian page for it). "Test sign-in" checks them. Tick "Remember the token" to keep it, encrypted for your Windows account only (DPAPI), in `%LOCALAPPDATA%\ConfluencePublisher\settings.json`.
-2. **Guide:** `docs\Espanso-Guide-Short.md` is picked by default; the title comes from its first heading and can be changed. Pictures it refers to are listed, and missing ones flagged.
-3. **Parent page:** paste the parent page's link or ID, or type words from its title and press Find, then click the page. It shows as `Space › … › Parent`.
-4. **Publish…** looks up the parent and whether it already has a page with this title, then asks:
-   - the exact parent path, the site and the title;
-   - **Create** a new page, or **Update** the existing one (version N to N+1; Confluence keeps the old one in the page history);
-   - the pictures that will be attached, and any page with the same title elsewhere in the space (left alone).
-
-   Cancel is the default button. If the page changes or moves between your "yes" and the write, nothing is written and it asks you to check again. A page is only ever updated when it sits directly under the parent you chose; it is never moved. The `.jira.txt` files are made from the `.md` files by `tools\md2jira.py` (from JOSIP, extended for pictures and boxes); BUILD.bat runs it when Python is installed.
+To put a guide on a Confluence Cloud page (pictures attached, parent page confirmed first), or to make the `.jira.txt` files again after editing a guide, use [confluence-publisher](https://github.com/csabakovacs314/confluence-publisher). It has its own repo now.
 
 ## Project layout
 
 - `src\EspansoEditor.Core`: reading, writing, checking and saving. No UI, fully tested.
 - `src\EspansoEditor.App`: the WPF window. Colours live in `App.xaml`.
 - `src\snipconv`: the command-line checker.
-- `src\Publisher.Core`: Markdown to Confluence storage format, and the Confluence Cloud calls (plan, then publish). No UI, tested against a pretend Confluence.
-- `src\ConfluencePublisher`: the publisher window.
-- `tools\md2jira.py`: Markdown to Jira wiki markup.
 - `docs\`: guides for Jira, pictures and the mockup they are drawn from.
-- `tests\EspansoEditor.Tests`: 145 tests, including your file's style (groups, trailing spaces, no final line break).
+- `tests\EspansoEditor.Tests`: 109 tests, including your file's style (groups, trailing spaces, no final line break).
