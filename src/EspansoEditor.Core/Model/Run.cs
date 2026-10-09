@@ -84,19 +84,23 @@ public static class BodyText
     public static List<Run> Normalize(IEnumerable<Run> runs)
     {
         var result = new List<Run>();
+        var text = new System.Text.StringBuilder();
+        void FlushText()
+        {
+            if (text.Length > 0) result.Add(Run.Literal(text.ToString()));
+            text.Clear();
+        }
         foreach (var r in runs)
         {
             if (r.Kind == RunKind.Text)
             {
-                if (r.Text.Length == 0) continue;
-                if (result.Count > 0 && result[^1].Kind == RunKind.Text)
-                {
-                    result[^1] = Run.Literal(result[^1].Text + r.Text);
-                    continue;
-                }
+                text.Append(r.Text);
+                continue;
             }
+            FlushText();
             result.Add(r);
         }
+        FlushText();
         return result;
     }
 

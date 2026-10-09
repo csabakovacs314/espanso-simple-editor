@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using EspansoEditor.Core.Model;
+using EspansoEditor.Core.Text;
 using YamlDotNet.RepresentationModel;
 
 namespace EspansoEditor.Core.Yaml;
@@ -39,7 +40,7 @@ internal static partial class SnippetReader
         string? reason = null;
         void Advanced(string why) => reason ??= why;
 
-        string? replace = null, form = null;
+        string? replace = null, form = null, html = null;
         YamlSequenceNode? vars = null;
 
         foreach (var (k, v) in node.Children)
@@ -72,6 +73,10 @@ internal static partial class SnippetReader
                     if (v is YamlScalarNode { Value: { } r }) replace = r;
                     else Advanced("has a replacement that is not plain text");
                     break;
+                case "html":
+                    if (v is YamlScalarNode { Value: { } h }) html = h;
+                    else Advanced("has unusual formatted text");
+                    break;
                 case "form":
                     if (v is YamlScalarNode { Value: { } f }) form = f;
                     else Advanced("has an unusual form");
@@ -103,18 +108,30 @@ internal static partial class SnippetReader
         }
 
         if (replace != null && form != null) Advanced("has both a form and a replacement");
+        if (html != null && (replace != null || form != null)) Advanced("has both HTML and plain text");
         if (node.Children.ContainsKey(new YamlScalarNode("trigger")) && node.Children.ContainsKey(new YamlScalarNode("triggers")))
             Advanced("has both 'trigger' and 'triggers'");
-        if (replace == null && form == null) Advanced("has no plain text to edit");
+        if (replace == null && form == null && html == null) Advanced("has no plain text to edit");
         if (s.Triggers.Count == 0) Advanced("has no trigger");
 
         if (reason == null)
         {
             try
             {
-                s.Body = form != null
-                    ? ReadForm(form, vars)
-                    : ReadReplace(replace!, vars);
+                if (html != null)
+                {
+                    s.Body = RichText.FromHtml(ReadReplace(html, vars))
+                             ?? throw new AdvancedException("uses HTML this editor cannot show (only bold, italic, code, headings and lists)");
+                    s.Format = SnippetFormat.Html;
+                }
+                else
+                {
+                    s.Body = form != null
+                        ? ReadForm(form, vars)
+                        : ReadReplace(replace!, vars);
+                    // Text written in the Markdown style Jira Cloud understands opens as formatted text.
+                    if (RichText.LooksLikeMarkdown(s.Body)) s.Format = SnippetFormat.Jira;
+                }
             }
             catch (AdvancedException ex)
             {
@@ -126,7 +143,7 @@ internal static partial class SnippetReader
         {
             s.AdvancedReason = reason;
             // Show whatever text there is, read-only.
-            s.Body = new List<Run> { Run.Literal(replace ?? form ?? "") };
+            s.Body = new List<Run> { Run.Literal(replace ?? form ?? html ?? "") };
         }
         return s;
     }

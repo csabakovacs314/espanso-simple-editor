@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.4 (2026-10-09)
+
+- **New: formatted snippets.** A format switch on every snippet: Plain text, Jira Cloud (Markdown) or HTML (formatted paste).
+  - The editor shows real bold, italic, code, three heading sizes, bullet and numbered lists, with buttons and Ctrl+B / Ctrl+I.
+  - Jira Cloud saves Markdown text (`**bold**`, `* ` bullets), the style your `/jira` templates already use; such snippets now open formatted instead of showing the symbols. Only text that reads back exactly is shown this way, so nothing changes until you edit.
+  - HTML saves Espanso `html:` and is pasted as rich text. Simple hand-written HTML opens for editing; anything else (links, tables, styles) stays read-only.
+  - Switching to Plain text keeps the words and drops the formatting.
+- On a copy of your `base.yml`: 6 snippets open as Jira Cloud, 16 as plain text, nothing changes on disk without an edit.
+- **Code review fixes (before release):**
+  - HTML snippets keep literal `*`, `` ` ``, `#`, `- ` and `1. ` as text instead of turning them into formatting.
+  - Bold with a space at its edge, code inside bold, and bold around italic are written so they read back the same.
+  - List items keep their own marker and indent (`-` or `*`, repeated `1.`, 4-space nesting) when you edit elsewhere in the snippet.
+  - Ordinary text such as `2*3*4`, `*** WARNING ***`, a lone `- John` or `# comment` no longer opens as formatted.
+  - Nested lists and line breaks inside list items in HTML stay read-only; nesting and Tab are off in HTML mode; Shift+Enter makes a normal new line.
+  - Very long lines no longer slow parsing down; a warning when an HTML snippet uses the cursor position.
+
 ## 0.1.3 (2026-10-09)
 
 - **Changed: "only where needed" is the default.** New snippets no longer start as whole word. Instead, when you add a trigger that would block a longer one (or be blocked by a shorter one), whole word is switched on for the short trigger by itself, with a message. The trigger box has three choices: only where needed, always, never.

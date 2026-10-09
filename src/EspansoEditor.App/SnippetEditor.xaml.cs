@@ -51,6 +51,7 @@ public partial class SnippetEditor : UserControl
         Snippet = snippet;
         _host = host;
         DataObject.AddPastingHandler(Editor, OnPaste);
+        CommandManager.AddPreviewExecutedHandler(Editor, OnEditorCommand);
         LoadFromModel();
     }
 
@@ -72,7 +73,11 @@ public partial class SnippetEditor : UserControl
             FillLocations();
             var endsWithNewline = EndsWithNewline(Snippet.Body);
             NewlineBox.IsChecked = endsWithNewline;
-            Editor.Document = DocumentConverter.ToDocument(Snippet.Body, endsWithNewline, Ctx);
+            FormatBox.SelectedIndex = (int)Snippet.Format;
+            Editor.Document = IsRich
+                ? DocumentConverter.ToRichDocument(Snippet.Body, endsWithNewline, Ctx, IsHtml)
+                : DocumentConverter.ToDocument(Snippet.Body, endsWithNewline, Ctx);
+            UpdateFormatUi();
             WordBox.IsChecked = Snippet.Word;
             CaseBox.IsChecked = Snippet.PropagateCase;
             ModeBox.SelectedIndex = Snippet.ForceMode switch { "clipboard" => 1, "keys" => 2, _ => 0 };
@@ -162,6 +167,8 @@ public partial class SnippetEditor : UserControl
         Editor.IsReadOnlyCaretVisible = false;
         LocationBox.IsEnabled = !ro;
         InsertButton.IsEnabled = !ro;
+        FormatBox.IsEnabled = !ro;
+        FormatBar.IsEnabled = !ro;
         DeleteButton.IsEnabled = !ro;
         WordBox.IsEnabled = !ro;
         CaseBox.IsEnabled = !ro;
@@ -226,7 +233,10 @@ public partial class SnippetEditor : UserControl
 
         // Preview of what Espanso will type.
         PreviewText.Inlines.Clear();
-        foreach (var seg in Preview.Render(Snippet.Body, _host.Config.GlobalEcho, DateTime.Now))
+        var shown = Snippet.Format == SnippetFormat.Html && !Snippet.IsReadOnly
+            ? RichText.ToPlain(RichText.ParseMarkdown(Snippet.Body, escaped: true))
+            : Snippet.Body;
+        foreach (var seg in Preview.Render(shown, _host.Config.GlobalEcho, DateTime.Now))
         {
             var run = new WpfRun(seg.Text);
             switch (seg.Part)
@@ -254,9 +264,15 @@ public partial class SnippetEditor : UserControl
         _host.SnippetChanged(Snippet);
     }
 
+    private bool IsRich => Snippet.Format != SnippetFormat.Plain;
+
+    private bool IsHtml => Snippet.Format == SnippetFormat.Html;
+
     private List<CoreRun> ReadBody()
     {
-        var runs = DocumentConverter.FromDocument(Editor.Document);
+        var runs = IsRich
+            ? RichText.ToMarkdown(DocumentConverter.FromRichDocument(Editor.Document), escape: IsHtml)
+            : DocumentConverter.FromDocument(Editor.Document);
         if (NewlineBox.IsChecked == true) runs.Add(CoreRun.Literal("\n"));
         return BodyText.Normalize(runs);
     }
@@ -307,6 +323,188 @@ public partial class SnippetEditor : UserControl
     }
 
     private void PopOut_Click(object sender, RoutedEventArgs e) => _host.PopOut(Snippet);
+
+    // ---------- format: plain text, Jira Cloud (Markdown), HTML ----------
+
+    private void UpdateFormatUi()
+    {
+        FormatBar.Visibility = IsRich ? Visibility.Visible : Visibility.Collapsed;
+        FormatHint.Text = Snippet.Format switch
+        {
+            SnippetFormat.Jira => "Saved as Markdown text: **bold**, * bullets, ### headings, `code`. Jira Cloud turns it into formatting. Chips are filled in when it runs.",
+            SnippetFormat.Html => "Pasted as formatted text (Espanso html:). Keeps its formatting in Jira, Outlook, Word and most web editors; plain-text boxes get the text only.",
+            _ => "Text Espanso types. Coloured chips are filled in when it runs; double-click a chip to change it.",
+        };
+        PreviewLabel.Text = Snippet.Format == SnippetFormat.Html ? "Espanso will paste (formatting not shown here)" : "Espanso will type";
+    }
+
+    private void FormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || Snippet.IsReadOnly || FormatBox.SelectedIndex < 0) return;
+        var target = (SnippetFormat)FormatBox.SelectedIndex;
+        if (target == Snippet.Format) return;
+        var newline = NewlineBox.IsChecked == true;
+
+        _loading = true;
+        try
+        {
+            if (!IsRich)
+            {
+                // Plain to formatted: Markdown already in the text (and "• " bullets) become formatting.
+                var markdown = BulletsToMarkdown(ReadBody());
+                Snippet.Format = target;
+                Snippet.Body = IsHtml ? RichText.ToMarkdown(RichText.ParseMarkdown(markdown), escape: true) : markdown;
+                Editor.Document = DocumentConverter.ToRichDocument(Snippet.Body, newline, Ctx, IsHtml);
+            }
+            else if (target == SnippetFormat.Plain)
+            {
+                var plain = RichText.ToPlain(DocumentConverter.FromRichDocument(Editor.Document));
+                if (newline) plain.Add(CoreRun.Literal("\n"));
+                Snippet.Body = BodyText.Normalize(plain);
+                Snippet.Format = target;
+                Editor.Document = DocumentConverter.ToDocument(Snippet.Body, newline, Ctx);
+            }
+            else
+            {
+                // Jira <-> HTML: the document stays; the text is written again in the new format's style.
+                Snippet.Format = target;
+                Snippet.Body = ReadBody();
+            }
+        }
+        finally
+        {
+            _loading = false;
+        }
+        UpdateFormatUi();
+        Changed();
+    }
+
+    /// <summary>Lines that start with "• " (how plain text shows bullets) become Markdown bullets again.</summary>
+    private static List<CoreRun> BulletsToMarkdown(List<CoreRun> runs)
+    {
+        var result = new List<CoreRun>();
+        var lineStart = true;
+        foreach (var r in runs)
+        {
+            if (r.Kind != RunKind.Text)
+            {
+                result.Add(r);
+                lineStart = false;
+                continue;
+            }
+            var lines = r.Text.Split('\n');
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if ((i > 0 || lineStart) && lines[i].TrimStart(' ').StartsWith("• "))
+                {
+                    var indent = lines[i].Length - lines[i].TrimStart(' ').Length;
+                    lines[i] = lines[i][..indent] + "* " + lines[i][(indent + 2)..];
+                }
+            }
+            result.Add(CoreRun.Literal(string.Join("\n", lines)));
+            lineStart = r.Text.EndsWith('\n');
+        }
+        return BodyText.Normalize(result);
+    }
+
+    /// <summary>Formatting keys (Ctrl+B and so on) only work where the format can keep them.</summary>
+    private void OnEditorCommand(object sender, ExecutedRoutedEventArgs e)
+    {
+        var c = e.Command;
+        var never = c == EditingCommands.ToggleUnderline || c == EditingCommands.IncreaseFontSize || c == EditingCommands.DecreaseFontSize
+                    || c == EditingCommands.AlignCenter || c == EditingCommands.AlignRight || c == EditingCommands.AlignJustify
+                    || c == EditingCommands.ToggleSubscript || c == EditingCommands.ToggleSuperscript;
+        var formatting = c == EditingCommands.ToggleBold || c == EditingCommands.ToggleItalic || c == EditingCommands.ToggleBullets
+                         || c == EditingCommands.ToggleNumbering || c == EditingCommands.IncreaseIndentation || c == EditingCommands.DecreaseIndentation;
+        // HTML cannot hold nested lists or tabs; nesting is for Jira only.
+        var nesting = c == EditingCommands.IncreaseIndentation || c == EditingCommands.DecreaseIndentation
+                      || c == EditingCommands.TabForward || c == EditingCommands.TabBackward;
+        if (never || (formatting && !IsRich) || (formatting && Snippet.IsReadOnly) || (nesting && IsHtml))
+        {
+            e.Handled = true;
+            return;
+        }
+        // Shift+Enter would make a line that belongs to no list or heading; make it a normal new line.
+        if (c == EditingCommands.EnterLineBreak && IsRich)
+        {
+            e.Handled = true;
+            EditingCommands.EnterParagraphBreak.Execute(null, Editor);
+        }
+    }
+
+    private void SyncBody()
+    {
+        if (_loading || Snippet.IsReadOnly) return;
+        Snippet.Body = ReadBody();
+        Changed();
+        Editor.Focus();
+    }
+
+    private void Bold_Click(object sender, RoutedEventArgs e)
+    {
+        EditingCommands.ToggleBold.Execute(null, Editor);
+        SyncBody();
+    }
+
+    private void Italic_Click(object sender, RoutedEventArgs e)
+    {
+        EditingCommands.ToggleItalic.Execute(null, Editor);
+        SyncBody();
+    }
+
+    private void Code_Click(object sender, RoutedEventArgs e)
+    {
+        var sel = Editor.Selection;
+        if (sel.IsEmpty) return;
+        var on = !(sel.GetPropertyValue(TextElement.FontFamilyProperty) is FontFamily f && DocumentConverter.IsMono(f));
+        if (on)
+        {
+            sel.ApplyPropertyValue(TextElement.FontFamilyProperty, FindResource("MonoFont"));
+            sel.ApplyPropertyValue(TextElement.BackgroundProperty, FindResource("CodeBrush"));
+        }
+        else
+        {
+            sel.ApplyPropertyValue(TextElement.FontFamilyProperty, FindResource("UiFont"));
+            sel.ApplyPropertyValue(TextElement.BackgroundProperty, Brushes.Transparent);
+        }
+        SyncBody();
+    }
+
+    private void Heading_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string tag } || !int.TryParse(tag, out var level)) return;
+        foreach (var p in SelectedParagraphs().ToList())
+        {
+            if (p.Parent is ListItem) continue; // a list item cannot be a heading
+            if (level == 0) DocumentConverter.ClearHeading(p);
+            else DocumentConverter.StyleHeading(p, level);
+        }
+        SyncBody();
+    }
+
+    private void Bullets_Click(object sender, RoutedEventArgs e)
+    {
+        EditingCommands.ToggleBullets.Execute(null, Editor);
+        SyncBody();
+    }
+
+    private void Numbers_Click(object sender, RoutedEventArgs e)
+    {
+        EditingCommands.ToggleNumbering.Execute(null, Editor);
+        SyncBody();
+    }
+
+    private IEnumerable<Paragraph> SelectedParagraphs()
+    {
+        var p = Editor.Selection.Start.Paragraph;
+        var end = Editor.Selection.End.Paragraph;
+        for (var guard = 0; p != null && guard < 10000; guard++)
+        {
+            yield return p;
+            if (ReferenceEquals(p, end)) yield break;
+            p = p.ContentEnd.GetNextInsertionPosition(LogicalDirection.Forward)?.Paragraph;
+        }
+    }
 
     private void AllTriggers_Click(object sender, RoutedEventArgs e) => _host.OpenTriggerSettings(OwnerWindow);
 

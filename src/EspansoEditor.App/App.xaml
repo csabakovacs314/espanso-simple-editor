@@ -39,6 +39,7 @@
             <SolidColorBrush x:Key="StatusBrush" Color="#0F3F3A"/>
             <SolidColorBrush x:Key="StatusInkBrush" Color="#DDF3EF"/>
             <SolidColorBrush x:Key="CursorInkBrush" Color="#FF8DB9"/>
+            <SolidColorBrush x:Key="CodeBrush" Color="#323737"/>
 
             <!-- Chips in the text: ask-when-typing fields, cursor, everything else. -->
             <SolidColorBrush x:Key="ChipFieldBrush" Color="#1D2A48"/>

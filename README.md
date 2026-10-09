@@ -1,4 +1,4 @@
-# Espanso Simple Editor 0.1.3
+# Espanso Simple Editor 0.1.4
 
 Edit your Espanso snippets one at a time, as text, in a PhraseExpress-style window with a dark theme. You never see YAML. On save the editor writes valid Espanso YAML back, and Espanso reloads it by itself.
 
@@ -22,9 +22,14 @@ Idea by Csaba Kovacs.
    - the text
    - triggers, "only as a whole word", "follow the case I type", "end with a line break", and the typing method
    - a note when a trigger blocks a longer one (see below)
-4. **Insert:** adds a date, time, clipboard, cursor position, a question Espanso asks first ("ask when typing"), PowerShell output, a random choice or a global variable. They appear as coloured chips. Double-click a chip to change it.
-5. **Save:** Ctrl+S. Espanso picks the change up by itself. "Reload Espanso" is only needed if `auto_restart` is off.
-6. **Triggers… (toolbar):** the trigger box. "All snippets…" next to "Only as a whole word" opens it too.
+4. **Format:** each snippet has a format switch above its text:
+   - **Plain text:** typed as it is.
+   - **Jira Cloud (Markdown):** you see real bold, italic, code, headings and lists; it is saved as Markdown text (`**bold**`, `* ` bullets, `### ` headings, `` `code` ``), which Jira Cloud turns into formatting. Snippets already written this way open in this format by themselves.
+   - **HTML (formatted paste):** the same formatting, saved as Espanso `html:` and pasted as rich text. Good for Outlook, Word and Jira. HTML snippets cannot ask when typing.
+   - The B, I, `</>`, H1 to H3, ¶ and list buttons appear for the two formatted options; Ctrl+B and Ctrl+I work there too. Switching to Plain text keeps the words and drops the formatting (bullets become "• ").
+5. **Insert:** adds a date, time, clipboard, cursor position, a question Espanso asks first ("ask when typing"), PowerShell output, a random choice or a global variable. They appear as coloured chips. Double-click a chip to change it.
+6. **Save:** Ctrl+S. Espanso picks the change up by itself. "Reload Espanso" is only needed if `auto_restart` is off.
+7. **Triggers… (toolbar):** the trigger box. "All snippets…" next to "Only as a whole word" opens it too.
    - **When to switch whole word on by itself:** "Only where needed" (the default) turns it on automatically when a trigger you add would block a longer one, and tells you. "Always" makes every new snippet whole word; "Never" leaves it off.
    - **Only where needed (button):** whole word just for the short triggers that already block longer ones. This is the recommended fix for an existing file.
    - **All snippets:** "Set all to whole word" or "Set all to none". Usually not what you want: with all on, every trigger waits for a space or Enter, and that character stays after the text, so multi-line templates end with an extra space.
@@ -47,7 +52,7 @@ Keys: Ctrl+S save, Ctrl+N new snippet, Ctrl+F search, Ctrl+W close tab.
 - **Changes on disk are caught.** If a file changed on disk since you opened it (another editor, a package install), the app asks before overwriting.
 - **A backup comes first.** Each save copies the current files to `%LOCALAPPDATA%\EspansoSimpleEditor\backups\<date-time>\`, outside the Espanso folder so Espanso never loads them. The last 30 saves are kept.
 - **Writes are atomic.** New files are written next to the originals and then swapped in, so Espanso never reads a half-written file. If a swap fails partway, press Ctrl+S again and choose to save anyway.
-- **Unknown features are left alone.** Snippets that use things the form does not cover open read-only and are kept exactly as they are: images, Markdown/HTML, regex triggers, choice lists in forms, scripts, and date offsets. The same goes for whole files that use YAML anchors, compact `[ ]` lists, or are not valid UTF-8.
+- **Unknown features are left alone.** Snippets that use things the form does not cover open read-only and are kept exactly as they are: images, Espanso `markdown:`, HTML with anything beyond bold, italic, code, headings and lists (links, tables, styles), regex triggers, choice lists in forms, scripts, and date offsets. The same goes for whole files that use YAML anchors, compact `[ ]` lists, or are not valid UTF-8.
 
 ## Check before you trust it: snipconv
 
@@ -68,7 +73,7 @@ The app uses a dark theme: Windows 11 style dark controls and a dark title bar (
 
 ## Not in 0.1 yet
 
-- **Formatted text:** bold, italic and links (Espanso `markdown:`/`html:`). Those snippets open read-only for now.
+- **Links and tables** in formatted snippets.
 - **Drag and drop:** moving snippets between groups. Use "Saved in" instead.
 - **Backups:** there is no in-app backup browser. The backup folder is listed above.
 - **Profiles:** editing `config\` app-specific profiles.
@@ -79,4 +84,4 @@ The app uses a dark theme: Windows 11 style dark controls and a dark title bar (
 - `src\EspansoEditor.Core`: reading, writing, checking and saving. No UI, fully tested.
 - `src\EspansoEditor.App`: the WPF window. Colours live in `App.xaml`.
 - `src\snipconv`: the command-line checker.
-- `tests\EspansoEditor.Tests`: 73 tests, including your file's style (groups, trailing spaces, no final line break).
+- `tests\EspansoEditor.Tests`: 109 tests, including your file's style (groups, trailing spaces, no final line break).

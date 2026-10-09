@@ -1,4 +1,5 @@
 using System.Text;
+using EspansoEditor.Core.Text;
 
 namespace EspansoEditor.Core.Model;
 
@@ -33,6 +34,12 @@ public sealed class Snippet
     /// <summary>Espanso left_word / right_word (read-only snippets): only fires at the start / end of a word.</summary>
     public bool LeftWord { get; internal set; }
     public bool RightWord { get; internal set; }
+
+    /// <summary>
+    /// Plain text, Jira Cloud (Markdown text) or HTML (pasted as rich text). For Jira and HTML the body holds
+    /// Markdown; HTML is made from it when the snippet is written.
+    /// </summary>
+    public SnippetFormat Format { get; set; }
 
     /// <summary>null (automatic), "clipboard" or "keys".</summary>
     public string? ForceMode { get; set; }
@@ -94,8 +101,11 @@ public sealed class Snippet
         if (IsAdvanced) return "ADV|" + OriginalCanonical + "|" + Group;
         sb.Append(string.Join("\u001f", Triggers)).Append('|');
         sb.Append(Label).Append('|').Append(word).Append('|').Append(PropagateCase).Append('|').Append(ForceMode).Append('|');
-        sb.Append(Group).Append('|').Append(UsesForm ? "form" : "replace").Append('|');
-        sb.Append(Body.Signature());
+        // Plain and Jira are both written as replace: text, so only HTML is told apart; its body is compared in the
+        // shape HTML can hold.
+        var html = Format == SnippetFormat.Html && !UsesForm;
+        sb.Append(Group).Append('|').Append(UsesForm ? "form" : html ? "html" : "replace").Append('|');
+        sb.Append(html ? BodyText.Signature(RichText.CanonicalForHtml(Body)) : Body.Signature());
         return sb.ToString();
     }
 

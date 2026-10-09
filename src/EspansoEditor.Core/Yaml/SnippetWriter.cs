@@ -1,5 +1,6 @@
 using System.Text;
 using EspansoEditor.Core.Model;
+using EspansoEditor.Core.Text;
 
 namespace EspansoEditor.Core.Yaml;
 
@@ -24,8 +25,9 @@ public static class SnippetWriter
 
         if (!string.IsNullOrEmpty(s.Label)) sb.Append(k).Append("label: ").Append(Quote(s.Label)).Append('\n');
 
-        var (text, vars) = BuildText(s, globalNames);
-        AppendScalar(sb, k, s.UsesForm ? "form" : "replace", text, forceQuoted);
+        var html = s.Format == SnippetFormat.Html && !s.UsesForm;
+        var (text, vars) = BuildText(s, html ? RichText.ToHtml(s.Body) : s.Body, globalNames);
+        AppendScalar(sb, k, s.UsesForm ? "form" : html ? "html" : "replace", text, forceQuoted);
 
         if (s.Word) sb.Append(k).Append("word: true\n");
         if (s.PropagateCase) sb.Append(k).Append("propagate_case: true\n");
@@ -61,9 +63,9 @@ public static class SnippetWriter
     }
 
     /// <summary>Builds the replace/form text and the variable list from the body.</summary>
-    private static (string Text, List<VarSpec> Vars) BuildText(Snippet s, IReadOnlySet<string> globalNames)
+    private static (string Text, List<VarSpec> Vars) BuildText(Snippet s, IReadOnlyList<Run> source, IReadOnlySet<string> globalNames)
     {
-        var body = BodyText.Normalize(s.Body);
+        var body = BodyText.Normalize(source);
         var form = s.UsesForm;
         var sb = new StringBuilder();
         var vars = new List<VarSpec>();

@@ -116,6 +116,225 @@ public static class DocumentConverter
         return BodyText.Normalize(result);
     }
 
+    // ---------- formatted text (Jira Cloud and HTML snippets) ----------
+
+    public const double Heading1Size = 22, Heading2Size = 19, Heading3Size = 16.5;
+
+    /// <summary>How a list item was written, so an unchanged item is written back the same way.</summary>
+    private sealed record ItemTag(BlockKind Kind, string Marker, string Indent, int Depth);
+
+    /// <summary>A formatted document: bold, italic, code, headings and lists from the snippet's Markdown.</summary>
+    /// <param name="escaped">The body uses the backslash escapes of HTML snippets.</param>
+    public static FlowDocument ToRichDocument(IReadOnlyList<CoreRun> body, bool dropFinalNewline, ChipContext ctx, bool escaped)
+    {
+        var doc = NewDocument();
+        var blocks = RichText.ParseMarkdown(body, escaped);
+        if (dropFinalNewline && blocks.Count > 1 && blocks[^1] is { Kind: BlockKind.Line, Indent.Length: 0, Inlines.Count: 0 })
+            blocks.RemoveAt(blocks.Count - 1);
+
+        // Open lists, outermost first, with the indent their items use. A deeper indent nests, an equal one
+        // continues the list, a smaller one goes back out (like Markdown).
+        var open = new List<(int Indent, List List)>();
+        foreach (var b in blocks)
+        {
+            var para = NewParagraph();
+            if (!b.IsList && b.Indent.Length > 0) para.Inlines.Add(new WpfRun(b.Indent));
+            foreach (var piece in b.Inlines) para.Inlines.Add(MakeInline(piece, ctx));
+
+            if (!b.IsList)
+            {
+                open.Clear();
+                if (b.HeadingLevel > 0) StyleHeading(para, b.HeadingLevel);
+                doc.Blocks.Add(para);
+                continue;
+            }
+
+            var numbered = b.Kind == BlockKind.Numbered;
+            var indent = b.Indent.Length;
+            while (open.Count > 0 && open[^1].Indent > indent) open.RemoveAt(open.Count - 1);
+            if (open.Count > 0 && open[^1].Indent == indent && IsNumbered(open[^1].List) != numbered) open.RemoveAt(open.Count - 1);
+            if (open.Count == 0 || open[^1].Indent < indent || IsNumbered(open[^1].List) != numbered)
+            {
+                var list = NewList(numbered, b.Marker);
+                if (open.Count == 0 || open[^1].List.ListItems.Count == 0) doc.Blocks.Add(list);
+                else open[^1].List.ListItems.LastListItem.Blocks.Add(list);
+                if (open.Count == 0 || open[^1].Indent < indent) open.Add((indent, list));
+                else open[^1] = (indent, list);
+            }
+            open[^1].List.ListItems.Add(new ListItem(para) { Tag = new ItemTag(b.Kind, b.Marker, b.Indent, open.Count - 1) });
+        }
+        if (doc.Blocks.Count == 0) doc.Blocks.Add(NewParagraph());
+        return doc;
+    }
+
+    /// <summary>Reads a formatted document back into lines with styles.</summary>
+    public static List<RichBlock> FromRichDocument(FlowDocument doc)
+    {
+        var blocks = new List<RichBlock>();
+
+        void AddParagraph(Paragraph p, BlockKind kind, string marker, string indent)
+        {
+            if (kind == BlockKind.Line) kind = HeadingKind(p.FontSize);
+            var heading = kind is BlockKind.Heading1 or BlockKind.Heading2 or BlockKind.Heading3;
+            var current = new RichBlock { Kind = kind, Marker = marker, Indent = indent };
+            blocks.Add(current);
+
+            // A heading is bold by itself; inside it only bold set on the text (Ctrl+B) counts.
+            bool Bold(TextElement e) => heading ? HasOwnBold(e, p) : IsBold(e);
+
+            void Inlines(InlineCollection inlines)
+            {
+                foreach (var inline in inlines)
+                {
+                    switch (inline)
+                    {
+                        case WpfRun r when r.Text.Length > 0:
+                            current.Inlines.Add(new RichInline(r.Text, Bold(r), r.FontStyle == FontStyles.Italic, IsMono(r.FontFamily)));
+                            break;
+                        case LineBreak:
+                            // Shift+Enter is turned into a new line by the editor; one from elsewhere continues the same kind of line.
+                            current = new RichBlock { Kind = current.IsList ? BlockKind.Line : current.Kind, Indent = current.IsList ? current.Indent + "  " : current.Indent };
+                            blocks.Add(current);
+                            break;
+                        case InlineUIContainer { Child: FrameworkElement { Tag: CoreRun chip } } c:
+                            current.Inlines.Add(new RichInline("", Bold(c), c.FontStyle == FontStyles.Italic, IsMono(c.FontFamily), chip));
+                            break;
+                        case Span span:
+                            Inlines(span.Inlines);
+                            break;
+                    }
+                }
+            }
+            Inlines(p.Inlines);
+        }
+
+        void AddBlock(Block b, int depth)
+        {
+            switch (b)
+            {
+                case Paragraph p:
+                    AddParagraph(p, BlockKind.Line, "", "");
+                    break;
+                case List l:
+                    var numbered = IsNumbered(l);
+                    var kind = numbered ? BlockKind.Numbered : BlockKind.Bullet;
+                    var n = Math.Max(1, l.StartIndex) - 1;
+                    string? lastIndent = null, lastMarker = null;
+                    foreach (var item in l.ListItems)
+                    {
+                        // An item loaded from the file keeps its own marker and indent ("1." twice, "-" or "*",
+                        // 4-space nesting) unless it was moved to another list; a new item follows the one before it.
+                        string marker, indent;
+                        if (item.Tag is ItemTag t && t.Kind == kind && t.Depth == depth)
+                        {
+                            marker = t.Marker;
+                            indent = t.Indent;
+                            if (numbered && int.TryParse(t.Marker.TrimEnd('.'), out var num)) n = num;
+                        }
+                        else
+                        {
+                            n++;
+                            marker = numbered ? n + "." : lastMarker ?? l.Tag as string ?? "*";
+                            indent = lastIndent ?? new string(' ', depth * 2);
+                        }
+                        lastIndent = indent;
+                        lastMarker = numbered ? null : marker;
+
+                        var first = true;
+                        foreach (var inner in item.Blocks)
+                        {
+                            if (inner is Paragraph ip && first)
+                                AddParagraph(ip, kind, marker, indent);
+                            else if (inner is Paragraph more)
+                                AddParagraph(more, BlockKind.Line, "", indent + "  ");
+                            else
+                                AddBlock(inner, depth + 1);
+                            first = false;
+                        }
+                    }
+                    break;
+                case Section s:
+                    foreach (var inner in s.Blocks) AddBlock(inner, depth);
+                    break;
+            }
+        }
+
+        foreach (var block in doc.Blocks) AddBlock(block, 0);
+        if (blocks.Count == 0) blocks.Add(new RichBlock());
+        return blocks;
+    }
+
+    public static void StyleHeading(Paragraph p, int level)
+    {
+        p.FontSize = level switch { 1 => Heading1Size, 2 => Heading2Size, _ => Heading3Size };
+        p.FontWeight = FontWeights.Bold;
+    }
+
+    public static void ClearHeading(Paragraph p)
+    {
+        p.ClearValue(TextElement.FontSizeProperty);
+        p.ClearValue(TextElement.FontWeightProperty);
+    }
+
+    private static BlockKind HeadingKind(double size) =>
+        size >= 21 ? BlockKind.Heading1 : size >= 18 ? BlockKind.Heading2 : size >= 16 ? BlockKind.Heading3 : BlockKind.Line;
+
+    public static List NewList(bool numbered, string marker)
+    {
+        var list = new List
+        {
+            MarkerStyle = numbered ? TextMarkerStyle.Decimal : TextMarkerStyle.Disc,
+            Margin = new Thickness(0),
+            Padding = new Thickness(24, 0, 0, 0),
+        };
+        if (numbered && int.TryParse(marker.TrimEnd('.'), out var start) && start > 0) list.StartIndex = start;
+        else if (!numbered) list.Tag = marker is "*" or "-" or "+" ? marker : "*";
+        return list;
+    }
+
+    private static bool IsNumbered(List l) => l.MarkerStyle is TextMarkerStyle.Decimal or TextMarkerStyle.LowerLatin
+        or TextMarkerStyle.UpperLatin or TextMarkerStyle.LowerRoman or TextMarkerStyle.UpperRoman;
+
+    private static bool IsBold(TextElement e) => e.FontWeight.ToOpenTypeWeight() >= 600;
+
+    /// <summary>Bold set on the text itself or a span around it, not inherited from the paragraph.</summary>
+    private static bool HasOwnBold(TextElement e, Paragraph stop)
+    {
+        for (DependencyObject? x = e; x != null && !ReferenceEquals(x, stop); x = (x as TextElement)?.Parent)
+        {
+            if (x.ReadLocalValue(TextElement.FontWeightProperty) is FontWeight w && w.ToOpenTypeWeight() >= 600) return true;
+        }
+        return false;
+    }
+
+    public static bool IsMono(FontFamily? f) => f?.Source is { } s && (s.Contains("Cascadia") || s.Contains("Consolas"));
+
+    private static Inline MakeInline(RichInline piece, ChipContext ctx)
+    {
+        Inline inline = piece.Chip != null
+            ? new InlineUIContainer(MakeChip(piece.Chip, ctx)) { BaselineAlignment = BaselineAlignment.Center }
+            : new WpfRun(piece.Text);
+        if (piece.Bold) inline.FontWeight = FontWeights.Bold;
+        if (piece.Italic) inline.FontStyle = FontStyles.Italic;
+        if (piece.Code) SetCode(inline, true);
+        return inline;
+    }
+
+    /// <summary>Inline code look: monospace on a slightly lighter background.</summary>
+    public static void SetCode(TextElement e, bool on)
+    {
+        if (on)
+        {
+            e.FontFamily = (FontFamily)Application.Current.FindResource("MonoFont");
+            e.Background = (Brush)Application.Current.FindResource("CodeBrush");
+        }
+        else
+        {
+            e.ClearValue(TextElement.FontFamilyProperty);
+            e.ClearValue(TextElement.BackgroundProperty);
+        }
+    }
+
     /// <summary>All chip elements in document order.</summary>
     public static IEnumerable<FrameworkElement> Chips(FlowDocument doc)
     {

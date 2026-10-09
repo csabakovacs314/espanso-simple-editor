@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using EspansoEditor.Core.Model;
+using EspansoEditor.Core.Text;
 
 namespace EspansoEditor.Core.Validation;
 
@@ -47,6 +48,12 @@ public static partial class Validator
         if (literal.Contains("$|$")) yield return new Issue(s, Severity.Error, "The text contains \"$|$\". Use Insert > Cursor position instead.");
 
         var form = s.UsesForm;
+        if (form && s.Format == SnippetFormat.Html)
+            yield return new Issue(s, Severity.Error, "HTML snippets cannot ask when typing. Use Plain text or Jira Cloud format, or remove the ask-when-typing fields.");
+        if (s.Format == SnippetFormat.Html && s.Body.Any(r => r.Kind == RunKind.Cursor))
+            yield return new Issue(s, Severity.Warning, "The cursor position may land in the wrong place in an HTML snippet. Test it once, or use Jira Cloud format.");
+        if (s.Format == SnippetFormat.Html && s.ForceMode == "keys")
+            yield return new Issue(s, Severity.Warning, "HTML is pasted as formatted text; \"Type key by key\" does not apply to it.");
         if (form)
         {
             if (literal.Contains("[[")) yield return new Issue(s, Severity.Error, "The text contains \"[[\", which clashes with the ask-when-typing fields.");
