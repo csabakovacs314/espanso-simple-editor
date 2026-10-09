@@ -3,101 +3,134 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="GroundBrush" Color="#F4F4F1"/>
-        <SolidColorBrush x:Key="PanelBrush" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="SideBrush" Color="#FAFAF8"/>
-        <SolidColorBrush x:Key="LineBrush" Color="#DADAD4"/>
-        <SolidColorBrush x:Key="SoftLineBrush" Color="#E4E4DE"/>
-        <SolidColorBrush x:Key="InkBrush" Color="#1C1C1A"/>
-        <SolidColorBrush x:Key="MutedBrush" Color="#5B5B55"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#0F766E"/>
-        <SolidColorBrush x:Key="AccentDarkBrush" Color="#0B4F4A"/>
-        <SolidColorBrush x:Key="AccentSoftBrush" Color="#E3F2EF"/>
-        <SolidColorBrush x:Key="WarnBrush" Color="#A15C07"/>
-        <SolidColorBrush x:Key="WarnSoftBrush" Color="#FDF6E7"/>
-        <SolidColorBrush x:Key="ErrorBrush" Color="#B42318"/>
-        <SolidColorBrush x:Key="ErrorSoftBrush" Color="#FDF3F2"/>
-        <SolidColorBrush x:Key="InfoBrush" Color="#1D4ED8"/>
-        <SolidColorBrush x:Key="InfoSoftBrush" Color="#EEF3FF"/>
-        <SolidColorBrush x:Key="StatusBrush" Color="#134E4A"/>
+        <ResourceDictionary>
+            <!-- The Windows 11 style controls (check boxes, lists, menus, scroll bars, tabs, text boxes) in their dark
+                 version are added in App.xaml.cs at start-up, so a problem loading them can never stop the app. -->
 
-        <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
-        <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
-        <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+            <!-- Dark palette. Every colour the app draws itself comes from here. -->
+            <SolidColorBrush x:Key="GroundBrush" Color="#161818"/>
+            <SolidColorBrush x:Key="SideBrush" Color="#1C1F1F"/>
+            <SolidColorBrush x:Key="PanelBrush" Color="#212424"/>
+            <SolidColorBrush x:Key="CardBrush" Color="#272A2A"/>
+            <SolidColorBrush x:Key="LineBrush" Color="#363A3A"/>
+            <SolidColorBrush x:Key="SoftLineBrush" Color="#2E3232"/>
+            <SolidColorBrush x:Key="InkBrush" Color="#E8E8E3"/>
+            <SolidColorBrush x:Key="LabelBrush" Color="#C4C6BF"/>
+            <SolidColorBrush x:Key="MutedBrush" Color="#A0A29B"/>
+            <SolidColorBrush x:Key="HintBrush" Color="#7E817B"/>
+            <SolidColorBrush x:Key="TagBrush" Color="#303434"/>
+            <SolidColorBrush x:Key="ButtonBrush" Color="#2A2E2E"/>
+            <SolidColorBrush x:Key="ButtonLineBrush" Color="#434848"/>
+            <SolidColorBrush x:Key="HoverBrush" Color="#1AFFFFFF"/>
 
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <SolidColorBrush x:Key="AccentBrush" Color="#3CC0B2"/>
+            <!-- Accent-coloured text (on dark or on the soft accent background). -->
+            <SolidColorBrush x:Key="AccentDarkBrush" Color="#8FDDD2"/>
+            <SolidColorBrush x:Key="AccentSoftBrush" Color="#183A36"/>
+            <SolidColorBrush x:Key="PrimaryBrush" Color="#0F7F74"/>
+            <SolidColorBrush x:Key="WarnBrush" Color="#F2B862"/>
+            <SolidColorBrush x:Key="WarnSoftBrush" Color="#342A15"/>
+            <SolidColorBrush x:Key="WarnLineBrush" Color="#6A5323"/>
+            <SolidColorBrush x:Key="ErrorBrush" Color="#FF8F84"/>
+            <SolidColorBrush x:Key="ErrorSoftBrush" Color="#3A1E1C"/>
+            <SolidColorBrush x:Key="InfoBrush" Color="#8DB5FF"/>
+            <SolidColorBrush x:Key="InfoSoftBrush" Color="#1C2740"/>
+            <SolidColorBrush x:Key="InfoLineBrush" Color="#34477A"/>
+            <SolidColorBrush x:Key="StatusBrush" Color="#0F3F3A"/>
+            <SolidColorBrush x:Key="StatusInkBrush" Color="#DDF3EF"/>
+            <SolidColorBrush x:Key="CursorInkBrush" Color="#FF8DB9"/>
 
-        <Style x:Key="BaseButton" TargetType="Button">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
-            <Setter Property="BorderBrush" Value="#CFCFC8"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="MinHeight" Value="34"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.86"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.45"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="Button" BasedOn="{StaticResource BaseButton}"/>
-        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
-        <Style x:Key="QuietButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Padding" Value="6,2"/>
-            <Setter Property="MinHeight" Value="24"/>
-        </Style>
+            <!-- Chips in the text: ask-when-typing fields, cursor, everything else. -->
+            <SolidColorBrush x:Key="ChipFieldBrush" Color="#1D2A48"/>
+            <SolidColorBrush x:Key="ChipFieldLineBrush" Color="#3B5590"/>
+            <SolidColorBrush x:Key="ChipFieldInkBrush" Color="#AFC6FF"/>
+            <SolidColorBrush x:Key="ChipCursorBrush" Color="#3B1C2A"/>
+            <SolidColorBrush x:Key="ChipCursorLineBrush" Color="#7C3756"/>
+            <SolidColorBrush x:Key="ChipCursorInkBrush" Color="#FF9DC4"/>
+            <SolidColorBrush x:Key="ChipVarBrush" Color="#362A12"/>
+            <SolidColorBrush x:Key="ChipVarLineBrush" Color="#7A5B22"/>
+            <SolidColorBrush x:Key="ChipVarInkBrush" Color="#F6CB7D"/>
+            <SolidColorBrush x:Key="TriggerChipBrush" Color="#183A36"/>
+            <SolidColorBrush x:Key="TriggerChipLineBrush" Color="#2F6B63"/>
 
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="MinHeight" Value="34"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="#CFCFC8"/>
-            <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
-        </Style>
+            <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+            <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
+            <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
-        <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#45453F"/>
-            <Setter Property="Margin" Value="0,0,0,6"/>
-        </Style>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <Style x:Key="Card" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="Background" Value="#FFFFFF"/>
-        </Style>
+            <Style x:Key="BaseButton" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource ButtonBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource ButtonLineBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" SnapsToDevicePixels="True"/>
+                                <Border x:Name="Hover" Background="{StaticResource HoverBrush}" CornerRadius="7" Visibility="Collapsed"/>
+                                <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Hover" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                    <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.45"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style TargetType="Button" BasedOn="{StaticResource BaseButton}"/>
+            <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
+                <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </Style>
+            <Style x:Key="QuietButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="Padding" Value="6,2"/>
+                <Setter Property="MinHeight" Value="24"/>
+            </Style>
+
+            <Style x:Key="FieldLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12.5"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
+                <Setter Property="Margin" Value="0,0,0,6"/>
+            </Style>
+
+            <Style x:Key="SectionTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
+                <Setter Property="Margin" Value="0,0,0,4"/>
+            </Style>
+
+            <Style x:Key="Card" TargetType="Border">
+                <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Padding" Value="14,12"/>
+                <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+            </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

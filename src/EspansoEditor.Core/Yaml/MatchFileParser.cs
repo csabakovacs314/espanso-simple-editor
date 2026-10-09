@@ -189,6 +189,7 @@ public static partial class MatchFileParser
             snippet.OriginalCanonical = Canonical.Of(node);
             snippet.OriginalValueCanonical = Canonical.Of(node, ignoreStyle: true);
             snippet.EndsWithBlockScalar = LastScalar(node) is { Style: ScalarStyle.Literal or ScalarStyle.Folded };
+            if (!flow) snippet.WordLayout = FindWordLayout(node, lines, dashLine, text);
 
             // Comments inside the snippet (between its keys, or at the end of a line) are carried over if it is rewritten.
             for (var ln = dashLine; ln <= last; ln++)
@@ -225,8 +226,48 @@ public static partial class MatchFileParser
             var marker = file.Groups.LastOrDefault(g => g.LineStart < s.Span!.Value.Start);
             s.Group = marker?.Name ?? "";
             s.OriginGroup = s.Group;
+            s.OriginalSignature = s.SemanticSignature();
+            s.OriginalWord = s.Word;
         }
         return file;
+    }
+
+    /// <summary>
+    /// Finds where "word" can be switched with a one-line edit: the line after the first key (to add it), the
+    /// "word:" line (to remove it) and its value (to flip it). Anything unusual returns null parts, and the
+    /// snippet is then rewritten as a whole instead.
+    /// </summary>
+    private static WordLayout? FindWordLayout(YamlMappingNode node, LineIndex lines, int dashLine, string text)
+    {
+        if (node.Style == MappingStyle.Flow || node.Children.Count == 0) return null;
+        var firstKeyLine = lines.LineOf((int)node.Start.Index);
+        if (firstKeyLine != dashLine) return null; // "-" alone on its line
+        var keyColumn = (int)node.Start.Index - lines.Start(dashLine);
+
+        var pairs = node.Children.ToList();
+        int? afterFirst = null;
+        var (k0, v0) = pairs[0];
+        var firstFits = lines.LineOf((int)k0.End.Index) == dashLine
+                        && lines.LineOf((int)v0.End.Index) == dashLine
+                        && v0 is not YamlScalarNode { Style: ScalarStyle.Literal or ScalarStyle.Folded }
+                        && (pairs.Count == 1 || lines.LineOf((int)pairs[1].Key.Start.Index) > dashLine);
+        var end = lines.LineEndWithBreak(dashLine);
+        if (firstFits && end > 0 && text[end - 1] == '\n') afterFirst = end;
+
+        (int, int)? wordLine = null, wordValue = null;
+        foreach (var (k, v) in pairs)
+        {
+            if (k is not YamlScalarNode { Value: "word" }) continue;
+            var line = lines.LineOf((int)k.Start.Index);
+            if (v is YamlScalarNode { Style: ScalarStyle.Plain } sv && lines.LineOf((int)sv.End.Index) == line && sv.End.Index > sv.Start.Index)
+            {
+                wordValue = ((int)sv.Start.Index, (int)sv.End.Index);
+                var before = text[lines.Start(line)..(int)k.Start.Index];
+                if (line != dashLine && before.Trim().Length == 0) wordLine = (lines.Start(line), lines.LineEndWithBreak(line));
+            }
+            break;
+        }
+        return new WordLayout(keyColumn, afterFirst, wordLine, wordValue);
     }
 
     /// <summary>All real comments (not text inside block scalars), by line.</summary>

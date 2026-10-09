@@ -83,12 +83,36 @@ public sealed class EspansoConfig
     }
 
     /// <summary>Creates an empty snippet in a file and group. It is dirty until saved.</summary>
-    public Snippet NewSnippet(MatchFile file, string group)
+    /// <param name="wholeWord">Start with "Only as a whole word" on (Espanso word: true).</param>
+    public Snippet NewSnippet(MatchFile file, string group, bool wholeWord = false)
     {
         if (file.IsReadOnly) throw new InvalidOperationException($"{file.RelativePath} is read-only.");
-        var s = new Snippet { File = file, Group = group ?? "", IsDirty = true };
+        var s = new Snippet { File = file, Group = group ?? "", IsDirty = true, Word = wholeWord };
         file.Snippets.Add(s);
         return s;
+    }
+
+    /// <summary>
+    /// Switches "Only as a whole word" on or off for many snippets at once. Read-only snippets (packages, advanced
+    /// ones) are skipped. Nothing is written until the next save; the returned change can be undone.
+    /// </summary>
+    public WordChange SetWholeWord(IEnumerable<Snippet> snippets, bool on)
+    {
+        var changed = new List<(Snippet Snippet, bool WasWord, bool WasDirty)>();
+        var locked = 0;
+        foreach (var s in snippets.Distinct())
+        {
+            if (s.IsReadOnly)
+            {
+                if (s.Word != on) locked++;
+                continue;
+            }
+            if (s.Word == on) continue;
+            changed.Add((s, s.Word, s.IsDirty));
+            s.Word = on;
+            s.IsDirty = true;
+        }
+        return new WordChange(changed, locked);
     }
 
     public void Delete(Snippet s)
@@ -138,5 +162,23 @@ public sealed class EspansoConfig
         var i = Files.IndexOf(file);
         if (i >= 0) Files[i] = fresh;
         return fresh;
+    }
+}
+
+/// <summary>What a bulk "whole word" switch did, so it can be undone.</summary>
+public sealed class WordChange(List<(Snippet Snippet, bool WasWord, bool WasDirty)> changed, int locked)
+{
+    public IReadOnlyList<(Snippet Snippet, bool WasWord, bool WasDirty)> Changed { get; } = changed;
+
+    /// <summary>Read-only snippets that would have changed but were left alone.</summary>
+    public int Locked { get; } = locked;
+
+    public void Undo()
+    {
+        foreach (var (s, wasWord, wasDirty) in Changed)
+        {
+            s.Word = wasWord;
+            s.IsDirty = wasDirty;
+        }
     }
 }

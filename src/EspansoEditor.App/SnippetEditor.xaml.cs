@@ -23,6 +23,9 @@ public interface IEditorHost
     void PopOut(Snippet s);
     void DeleteSnippet(Snippet s);
     void SaveAll();
+
+    /// <summary>Opens the trigger box (whole word for new snippets and for all snippets at once).</summary>
+    void OpenTriggerSettings(Window? owner);
 }
 
 public sealed record LocationItem(MatchFile File, string Group)
@@ -95,6 +98,24 @@ public partial class SnippetEditor : UserControl
         AdoptVariableNames();
         RefreshDerived();
     }
+
+    /// <summary>Called after the trigger box changed "whole word" for many snippets at once.</summary>
+    public void RefreshOptions()
+    {
+        _loading = true;
+        try
+        {
+            WordBox.IsChecked = Snippet.Word;
+        }
+        finally
+        {
+            _loading = false;
+        }
+        RefreshDerived();
+    }
+
+    /// <summary>Re-runs the checks, for when another snippet changed (a trigger, or whole word).</summary>
+    public void RefreshChecks() => RefreshDerived();
 
     public void FocusTrigger()
     {
@@ -176,7 +197,7 @@ public partial class SnippetEditor : UserControl
         {
             Banner.Visibility = Visibility.Visible;
             Banner.Background = Res(kind == "warn" ? "WarnSoftBrush" : "InfoSoftBrush");
-            Banner.BorderBrush = new SolidColorBrush(kind == "warn" ? Color.FromRgb(0xF0, 0xD2, 0x9A) : Color.FromRgb(0xD5, 0xDE, 0xF5));
+            Banner.BorderBrush = Res(kind == "warn" ? "WarnLineBrush" : "InfoLineBrush");
             BannerText.Inlines.Clear();
             BannerText.Inlines.Add(new Bold(new WpfRun(title + " ")));
             BannerText.Inlines.Add(new WpfRun(text));
@@ -212,7 +233,7 @@ public partial class SnippetEditor : UserControl
                     run.FontStyle = FontStyles.Italic;
                     break;
                 case PreviewPart.Cursor:
-                    run.Foreground = new SolidColorBrush(Color.FromRgb(0xA3, 0x15, 0x4B));
+                    run.Foreground = Res("CursorInkBrush");
                     run.FontWeight = FontWeights.Bold;
                     break;
             }
@@ -284,6 +305,8 @@ public partial class SnippetEditor : UserControl
 
     private void PopOut_Click(object sender, RoutedEventArgs e) => _host.PopOut(Snippet);
 
+    private void AllTriggers_Click(object sender, RoutedEventArgs e) => _host.OpenTriggerSettings(OwnerWindow);
+
     private void Delete_Click(object sender, RoutedEventArgs e) => _host.DeleteSnippet(Snippet);
 
     // ---------- triggers ----------
@@ -325,8 +348,8 @@ public partial class SnippetEditor : UserControl
             TriggerPanel.Children.Add(new Border
             {
                 Child = panel,
-                Background = new SolidColorBrush(Color.FromRgb(0xEE, 0xF6, 0xF4)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0xB9, 0xDD, 0xD6)),
+                Background = Res("TriggerChipBrush"),
+                BorderBrush = Res("TriggerChipLineBrush"),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(7),
                 Padding = new Thickness(10, 3, Snippet.IsReadOnly ? 10 : 2, 3),

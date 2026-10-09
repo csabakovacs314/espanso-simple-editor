@@ -160,13 +160,13 @@ public static class DocumentConverter
         switch (run.Kind)
         {
             case RunKind.Field:
-                bg = Hex("#E2EAFE"); border = Hex("#B8CBFB"); fg = Hex("#1D3FA8");
+                bg = Res("ChipFieldBrush"); border = Res("ChipFieldLineBrush"); fg = Res("ChipFieldInkBrush");
                 break;
             case RunKind.Cursor:
-                bg = Hex("#FCE7EF"); border = Hex("#F2B8CD"); fg = Hex("#A3154B");
+                bg = Res("ChipCursorBrush"); border = Res("ChipCursorLineBrush"); fg = Res("ChipCursorInkBrush");
                 break;
             default:
-                bg = Hex("#FCEFD6"); border = Hex("#F0D29A"); fg = Hex("#7A3A05");
+                bg = Res("ChipVarBrush"); border = Res("ChipVarLineBrush"); fg = Res("ChipVarInkBrush");
                 break;
         }
 
@@ -226,5 +226,5 @@ public static class DocumentConverter
         _ => "",
     };
 
-    private static SolidColorBrush Hex(string hex) => (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!;
+    private static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
 }

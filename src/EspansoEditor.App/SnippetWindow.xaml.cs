@@ -12,6 +12,7 @@ public partial class SnippetWindow : Window
     public SnippetWindow(Snippet snippet, IEditorHost host)
     {
         InitializeComponent();
+        DarkTitleBar.Apply(this);
         _host = host;
         Editor = new SnippetEditor(snippet, host);
         Editor.SetPoppedOut(true);

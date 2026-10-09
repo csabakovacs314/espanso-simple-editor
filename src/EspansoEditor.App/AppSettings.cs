@@ -9,6 +9,9 @@ internal sealed class AppSettings
     public string? LastFolder { get; set; }
     public bool AutoOpen { get; set; } = true;
 
+    /// <summary>New snippets start with "Only as a whole word" ticked.</summary>
+    public bool NewSnippetWholeWord { get; set; } = true;
+
     private static string FilePath => Path.Combine(App.DataDir, "settings.json");
 
     public static AppSettings Load()

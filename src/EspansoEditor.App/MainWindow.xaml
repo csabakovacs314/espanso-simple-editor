@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:EspansoEditor.App"
         Title="Espanso Simple Editor" Width="1360" Height="880" MinWidth="960" MinHeight="620"
         WindowStartupLocation="CenterScreen" FontFamily="{StaticResource UiFont}" FontSize="13.5"
-        Background="{StaticResource GroundBrush}"
+        Background="{StaticResource GroundBrush}" Foreground="{StaticResource InkBrush}"
         Loaded="Window_Loaded" Closing="Window_Closing" PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
@@ -12,9 +12,9 @@
             <StackPanel Orientation="Horizontal" Margin="0,5,0,3" ToolTip="{Binding ToolTipText}">
                 <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE8B7;" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,7,0"/>
                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
-                <Border Background="#EFEFEA" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center"
+                <Border Background="{StaticResource TagBrush}" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center"
                         Visibility="{Binding HasTag, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="{Binding Tag}" FontSize="11" Foreground="#45453F"/>
+                    <TextBlock Text="{Binding Tag}" FontSize="11" Foreground="{StaticResource LabelBrush}"/>
                 </Border>
                 <TextBlock Text="{Binding CountText}" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"/>
             </StackPanel>
@@ -38,7 +38,7 @@
                     <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE72E;" Foreground="{StaticResource MutedBrush}" FontSize="11"
                                Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}"/>
                     <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE7BA;" Foreground="{StaticResource WarnBrush}" FontSize="11"
-                               Visibility="{Binding HasWarning, Converter={StaticResource BoolToVis}}" ToolTip="This trigger is also used by another snippet"/>
+                               Visibility="{Binding HasWarning, Converter={StaticResource BoolToVis}}" ToolTip="A trigger clashes with another snippet. Open it to see why."/>
                     <Ellipse Width="7" Height="7" Fill="{StaticResource InkBrush}" Margin="2,3,0,0"
                              Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" ToolTip="Unsaved changes"/>
                 </StackPanel>
@@ -51,7 +51,7 @@
     <Grid>
         <!-- 1. Pick and load the Espanso configuration -->
         <Grid x:Name="LoadView">
-            <Border Width="660" VerticalAlignment="Center" HorizontalAlignment="Center" Background="#FFFFFF"
+            <Border Width="660" VerticalAlignment="Center" HorizontalAlignment="Center" Background="{StaticResource CardBrush}"
                     BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="14" Padding="32,28">
                 <StackPanel>
                     <TextBlock Text="Open your Espanso snippets" FontSize="24" FontWeight="Bold"/>
@@ -97,6 +97,13 @@
                             </StackPanel>
                         </Button>
                         <Button Content="New group…" Click="NewGroup_Click" Margin="0,0,8,0" ToolTip="Add a group to the selected file"/>
+                        <Button Click="TriggerSettings_Click" Margin="0,0,8,0"
+                                ToolTip="Whole word for new snippets, whole word on or off for all snippets, and triggers that block longer ones">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE765;" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Triggers…"/>
+                            </StackPanel>
+                        </Button>
                         <Button Style="{StaticResource PrimaryButton}" Click="Save_Click" Margin="0,0,16,0" ToolTip="Save all changes (Ctrl+S)">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE74E;" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -106,11 +113,11 @@
                         <Grid Width="280">
                             <TextBox x:Name="SearchBox" TextChanged="Search_TextChanged" ToolTip="Search descriptions, triggers and text (Ctrl+F)"/>
                             <TextBlock x:Name="SearchHint" Text="Search snippets or triggers" IsHitTestVisible="False"
-                                       Foreground="#8A8A82" Margin="11,0,0,0" VerticalAlignment="Center"/>
+                                       Foreground="{StaticResource HintBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                         </Grid>
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <Border x:Name="EspansoPill" CornerRadius="14" Padding="12,5" Background="#EFEFEA" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <Border x:Name="EspansoPill" CornerRadius="14" Padding="12,5" Background="{StaticResource TagBrush}" VerticalAlignment="Center" Margin="0,0,8,0">
                             <TextBlock x:Name="EspansoStatusText" Text="Checking Espanso…" FontSize="12.5"/>
                         </Border>
                         <Button Click="Reload_Click" Margin="0,0,8,0" ToolTip="Runs 'espanso restart'. Normally not needed: Espanso reloads by itself after a save.">
@@ -126,8 +133,8 @@
 
             <Border DockPanel.Dock="Bottom" Background="{StaticResource StatusBrush}" Padding="14,5">
                 <DockPanel>
-                    <TextBlock x:Name="StatusRight" DockPanel.Dock="Right" Foreground="#F2FBF9" FontSize="12"/>
-                    <TextBlock x:Name="StatusLeft" Foreground="#F2FBF9" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="StatusRight" DockPanel.Dock="Right" Foreground="{StaticResource StatusInkBrush}" FontSize="12"/>
+                    <TextBlock x:Name="StatusLeft" Foreground="{StaticResource StatusInkBrush}" FontSize="12" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
             </Border>
 
@@ -142,18 +149,20 @@
                           SelectedItemChanged="Library_SelectedItemChanged"
                           VirtualizingPanel.IsVirtualizing="False" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <TreeView.ItemContainerStyle>
-                        <Style TargetType="TreeViewItem">
+                        <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
                             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                             <Setter Property="Padding" Value="2,0"/>
+                            <Setter Property="Foreground" Value="{StaticResource InkBrush}"/>
                         </Style>
                     </TreeView.ItemContainerStyle>
                 </TreeView>
 
                 <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="{StaticResource LineBrush}"/>
 
-                <Grid Grid.Column="2" Background="#FFFFFF">
-                    <TabControl x:Name="Tabs" BorderThickness="0,1,0,0" Padding="0" Background="#FFFFFF" SelectionChanged="Tabs_SelectionChanged"/>
+                <Grid Grid.Column="2" Background="{StaticResource PanelBrush}">
+                    <TabControl x:Name="Tabs" BorderThickness="0,1,0,0" Padding="0" Background="{StaticResource PanelBrush}"
+                                BorderBrush="{StaticResource LineBrush}" SelectionChanged="Tabs_SelectionChanged"/>
                     <TextBlock x:Name="EmptyHint" Text="Pick a snippet on the left to open it here, or press Ctrl+N for a new one."
                                HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="14"/>
                 </Grid>
@@ -162,9 +171,9 @@
 
         <!-- 3. Messages -->
         <Border x:Name="Toast" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,46"
-                Width="420" Background="#FFFFFF" BorderBrush="#CFCFC8" BorderThickness="1" CornerRadius="10" Padding="16,12,10,12">
+                Width="420" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource ButtonLineBrush}" BorderThickness="1" CornerRadius="10" Padding="16,12,10,12">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.18"/>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.55"/>
             </Border.Effect>
             <DockPanel>
                 <Button DockPanel.Dock="Right" Style="{StaticResource QuietButton}" VerticalAlignment="Top" Click="ToastClose_Click" ToolTip="Dismiss">
@@ -173,7 +182,7 @@
                 <TextBlock x:Name="ToastIcon" DockPanel.Dock="Left" FontFamily="{StaticResource IconFont}" FontSize="18" Margin="0,1,12,0" VerticalAlignment="Top"/>
                 <StackPanel>
                     <TextBlock x:Name="ToastTitle" FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"/>
-                    <TextBlock x:Name="ToastBody" TextWrapping="Wrap" Foreground="#45453F" Margin="0,2,0,0"/>
+                    <TextBlock x:Name="ToastBody" TextWrapping="Wrap" Foreground="{StaticResource LabelBrush}" Margin="0,2,0,0"/>
                 </StackPanel>
             </DockPanel>
         </Border>

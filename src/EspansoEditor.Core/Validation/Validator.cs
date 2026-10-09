@@ -34,6 +34,8 @@ public static partial class Validator
                 yield return new Issue(s, Severity.Warning, $"\"{t}\" is also the trigger of \"{other.DisplayName}\" in {other.File.RelativePath}.");
         }
 
+        foreach (var issue in ClashWarnings(s, cfg)) yield return issue;
+
         var body = BodyText.Normalize(s.Body);
         if (body.Count == 0) yield return new Issue(s, Severity.Warning, "The text is empty.");
         if (body.Count(r => r.Kind == RunKind.Cursor) > 1) yield return new Issue(s, Severity.Error, "Only one cursor position is allowed.");
@@ -72,6 +74,27 @@ public static partial class Validator
                     yield return new Issue(s, Severity.Error, "Chip settings cannot contain {{ }}.");
                     break;
             }
+        }
+    }
+
+    /// <summary>Warnings for triggers that block, or are blocked by, another trigger.</summary>
+    private static IEnumerable<Issue> ClashWarnings(Snippet s, EspansoConfig cfg)
+    {
+        var clashes = TriggerClashes.For(s, cfg.AllSnippets);
+        foreach (var g in clashes.Where(c => ReferenceEquals(c.Blocker, s)).GroupBy(c => c.Short))
+        {
+            var longer = string.Join(", ", g.Select(c => $"\"{c.Long}\"").Distinct());
+            var fix = s.Word
+                ? "Rename one of them."
+                : "Tick \"Only as a whole word\" here to fix it.";
+            yield return new Issue(s, Severity.Warning, $"\"{g.Key}\" fires before {longer} can be typed. {fix}");
+        }
+        foreach (var c in clashes.Where(c => ReferenceEquals(c.Blocked, s)))
+        {
+            var fix = c.Blocker.IsReadOnly || c.Blocker.Word
+                ? "Rename this trigger."
+                : $"Tick \"Only as a whole word\" on \"{c.Blocker.DisplayName}\", or rename one of them.";
+            yield return new Issue(s, Severity.Warning, $"\"{c.Long}\" can never be typed: \"{c.Short}\" ({c.Blocker.DisplayName}) fires first. {fix}");
         }
     }
 

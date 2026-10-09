@@ -15,10 +15,16 @@ public static class FileRewriter
 {
     private sealed record Edit(int Start, int End, string Text);
 
-    public static string Rewrite(MatchFile f, IReadOnlySet<string> globalNames, string groupDelimiter = "---", bool forceQuoted = false) =>
-        RewriteWithInfo(f, globalNames, groupDelimiter, forceQuoted).Text;
+    public static string Rewrite(MatchFile f, IReadOnlySet<string> globalNames, string groupDelimiter = "---", bool forceQuoted = false,
+        bool minimal = false) =>
+        RewriteWithInfo(f, globalNames, groupDelimiter, forceQuoted, minimal).Text;
 
-    public static RewriteResult RewriteWithInfo(MatchFile f, IReadOnlySet<string> globalNames, string groupDelimiter = "---", bool forceQuoted = false)
+    /// <param name="minimal">
+    /// Change as few bytes as possible: a snippet that is back to what is on disk is left alone, and a snippet whose only
+    /// change is "Only as a whole word" gets a one-line edit. Every other change rewrites the snippet as usual.
+    /// </param>
+    public static RewriteResult RewriteWithInfo(MatchFile f, IReadOnlySet<string> globalNames, string groupDelimiter = "---", bool forceQuoted = false,
+        bool minimal = false)
     {
         if (f.IsReadOnly) throw new InvalidOperationException($"{f.RelativePath} is read-only: {f.ReadOnlyReason}");
 
@@ -45,8 +51,18 @@ public static class FileRewriter
 
         // 2. Changed snippets that stay where they are.
         var staying = f.Snippets.Where(s => s.Span != null && ReferenceEquals(s.OriginFile, f) && !removed.Contains(s)).ToList();
+        var rewritten = new HashSet<Snippet>();
         foreach (var s in staying.Where(s => s.IsDirty))
+        {
+            var small = minimal ? SmallEdits(s, text) : null;
+            if (small != null)
+            {
+                edits.AddRange(small);
+                continue;
+            }
             edits.Add(new Edit(s.Span!.Value.Start, s.Span!.Value.End, Emit(s, s.Span!.Value.DashColumn)));
+            rewritten.Add(s);
+        }
 
         // 3. New or moved-in snippets, inserted at the end of their group.
         var inserts = f.Snippets.Where(s => s.Span == null || !ReferenceEquals(s.OriginFile, f) || removed.Contains(s)).ToList();
@@ -118,7 +134,7 @@ public static class FileRewriter
             {
                 var insert = sb.ToString();
                 if (anchor == text.Length && text.Length > 0 && !text.EndsWith('\n'))
-                    insert = EndOfFileInsert(f, text, staying, reemitted, edits, globalNames, forceQuoted) + insert;
+                    insert = EndOfFileInsert(f, text, staying, rewritten, reemitted, edits, globalNames, forceQuoted) + insert;
                 edits.Add(new Edit(anchor, anchor, insert));
             }
         }
@@ -148,12 +164,14 @@ public static class FileRewriter
     /// in front of the insertion. A "|" block at the very end would gain a final line break from that, so such a
     /// snippet is rewritten, but only if its rewrite means exactly the same to Espanso.
     /// </summary>
-    private static string EndOfFileInsert(MatchFile f, string text, List<Snippet> staying, HashSet<Snippet> reemitted,
-        List<Edit> edits, IReadOnlySet<string> globalNames, bool forceQuoted)
+    private static string EndOfFileInsert(MatchFile f, string text, List<Snippet> staying, HashSet<Snippet> rewritten,
+        HashSet<Snippet> reemitted, List<Edit> edits, IReadOnlySet<string> globalNames, bool forceQuoted)
     {
         var last = staying.FirstOrDefault(s => s.Span!.Value.End == text.Length);
         if (last == null || !last.EndsWithBlockScalar) return "\n";   // a line break changes nothing here
-        if (last.IsDirty) return "";                                  // already rewritten; its new text ends with a line break
+        if (rewritten.Contains(last)) return "";                      // already rewritten; its new text ends with a line break
+        if (last.IsDirty)
+            throw new InvalidOperationException("Internal: the last snippet needs a full rewrite here."); // the save retries without small edits
         if (last.IsAdvanced)
             throw new InvalidOperationException($"{f.RelativePath} ends without a line break right after a snippet this editor cannot rewrite. Add an empty line at the end of that file, then save again.");
 
@@ -165,6 +183,30 @@ public static class FileRewriter
         edits.Add(new Edit(last.Span!.Value.Start, last.Span!.Value.End, emitted));
         reemitted.Add(last);
         return "";
+    }
+
+    /// <summary>
+    /// The smallest edit for a changed snippet that stays in place, or null when it has to be rewritten as a whole.
+    /// An empty list means it is back to what is on disk.
+    /// </summary>
+    private static List<Edit>? SmallEdits(Snippet s, string text)
+    {
+        if (s.IsAdvanced || s.OriginalSignature == null || s.Span is not { } sp) return null;
+        if (s.SemanticSignature() == s.OriginalSignature) return new List<Edit>();
+        if (s.Word == s.OriginalWord || s.SemanticSignature(s.OriginalWord) != s.OriginalSignature) return null;
+        if (s.WordLayout is not { } layout) return null;
+
+        // A "|" block at the very end of a file without a final line break would gain one; leave that to a full rewrite.
+        if (sp.End == text.Length && !text.EndsWith('\n') && s.EndsWithBlockScalar) return null;
+
+        if (s.Word)
+        {
+            if (layout.WordValue is { } v) return new List<Edit> { new(v.Start, v.End, "true") };
+            if (layout.AfterFirstLine is { } at) return new List<Edit> { new(at, at, new string(' ', layout.KeyColumn) + "word: true\n") };
+            return null;
+        }
+        if (layout.WordLine is { } line) return new List<Edit> { new(line.Start, line.End, "") };
+        return null;
     }
 
     private static StringBuilder Get(SortedDictionary<int, StringBuilder> d, int key)

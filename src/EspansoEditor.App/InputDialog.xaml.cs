@@ -13,6 +13,7 @@ public partial class InputDialog : Window
     public InputDialog()
     {
         InitializeComponent();
+        DarkTitleBar.Apply(this);
     }
 
     public string Value => _useOptions ? OptionsBox.Text : ValueBox.Text;

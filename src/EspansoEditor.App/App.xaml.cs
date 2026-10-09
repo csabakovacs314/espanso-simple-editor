@@ -11,11 +11,38 @@ public partial class App : Application
 
     private static readonly object LogLock = new();
 
+    private const string DarkControls = "pack://application:,,,/PresentationFramework.Fluent;component/Themes/Fluent.Dark.xaml";
+
     protected override void OnStartup(StartupEventArgs e)
     {
         DispatcherUnhandledException += OnUnhandled;
         Core.Espanso.EspansoCli.Log = WriteCliLog;
+        LoadDarkControls();
         base.OnStartup(e);
+    }
+
+    /// <summary>
+    /// Dark Windows 11 style for the standard controls. Added before the main window opens; the app's own styles
+    /// (buttons, colours) still win because they sit in the application dictionary itself.
+    /// </summary>
+    private void LoadDarkControls()
+    {
+        try
+        {
+            Resources.MergedDictionaries.Insert(0, new ResourceDictionary { Source = new Uri(DarkControls, UriKind.Absolute) });
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                Directory.CreateDirectory(DataDir);
+                File.AppendAllText(Path.Combine(DataDir, "error.log"), $"{DateTime.Now:O}\nDark control theme could not be loaded:\n{ex}\n\n");
+            }
+            catch
+            {
+                // Logging is best effort.
+            }
+        }
     }
 
     /// <summary>Keeps a small log of every espanso command call, for troubleshooting detection.</summary>

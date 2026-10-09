@@ -55,18 +55,19 @@ public static class SaveService
             return result;
         }
 
-        // 2. Build and verify every file before writing any. If a "|" block would not read back right
-        //    (rare layouts), try again writing changed text as quoted strings.
+        // 2. Build and verify every file before writing any. First with the smallest possible edits (a whole-word
+        //    switch is one line), then rewriting changed snippets, then, for rare layouts where a "|" block would not
+        //    read back right, writing changed text as quoted strings.
         var plan = new List<(MatchFile File, string NewText, IReadOnlySet<Snippet> Reemitted)>();
         var globals = cfg.GlobalVarNames;
         foreach (var f in affected)
         {
             string? problem = null;
-            foreach (var quoted in new[] { false, true })
+            foreach (var (minimal, quoted) in new[] { (true, false), (false, false), (false, true) })
             {
                 try
                 {
-                    var r = FileRewriter.RewriteWithInfo(f, globals, cfg.GroupDelimiter, forceQuoted: quoted);
+                    var r = FileRewriter.RewriteWithInfo(f, globals, cfg.GroupDelimiter, forceQuoted: quoted, minimal: minimal);
                     problem = Verifier.Verify(f, r.Text, r.Reemitted);
                     if (problem == null)
                     {
@@ -77,7 +78,6 @@ public static class SaveService
                 catch (Exception ex)
                 {
                     problem = $"{f.RelativePath}: {ex.Message}";
-                    break;
                 }
             }
             if (problem != null) result.Errors.Add(problem);
@@ -214,6 +214,9 @@ public static class SaveService
             s.OriginalCanonical = a.OriginalCanonical;
             s.OriginalValueCanonical = a.OriginalValueCanonical;
             s.EndsWithBlockScalar = a.EndsWithBlockScalar;
+            s.OriginalSignature = a.OriginalSignature;
+            s.OriginalWord = a.OriginalWord;
+            s.WordLayout = a.WordLayout;
             s.PreservedComments.Clear();
             s.PreservedComments.AddRange(a.PreservedComments);
             if (!s.IsAdvanced) s.Body = a.Body; // picks up the variable names that were written

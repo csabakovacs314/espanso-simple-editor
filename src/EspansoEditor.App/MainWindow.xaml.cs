@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using EspansoEditor.Core.Espanso;
 using EspansoEditor.Core.Model;
 using EspansoEditor.Core.Saving;
+using EspansoEditor.Core.Validation;
 
 namespace EspansoEditor.App;
 
@@ -35,6 +36,7 @@ public partial class MainWindow : Window, IEditorHost
     public MainWindow()
     {
         InitializeComponent();
+        DarkTitleBar.Apply(this);
         Library.ItemsSource = _roots;
         _toastTimer.Tick += (_, _) =>
         {
@@ -225,7 +227,7 @@ public partial class MainWindow : Window, IEditorHost
         if (_cfg == null) return;
         var q = SearchBox.Text.Trim();
         var keep = ActiveSnippet; // only ever re-select an open tab, so a closed one cannot come back
-        var duplicates = DuplicateTriggers();
+        var warned = WarnedSnippets();
 
         _building = true;
         _suppressTreeSelection = true;
@@ -251,7 +253,7 @@ public partial class MainWindow : Window, IEditorHost
                     }
                     foreach (var s in items)
                     {
-                        var sn = new SnippetNode(s) { HasWarning = s.Triggers.Any(duplicates.Contains) };
+                        var sn = new SnippetNode(s) { HasWarning = warned.Contains(s) };
                         _nodes[s] = sn;
                         target.Add(sn);
                         any = true;
@@ -275,10 +277,21 @@ public partial class MainWindow : Window, IEditorHost
         }
     }
 
-    private HashSet<string> DuplicateTriggers() =>
-        _cfg == null
-            ? new HashSet<string>()
-            : _cfg.AllSnippets.SelectMany(s => s.Triggers.Distinct()).GroupBy(t => t).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
+    /// <summary>Snippets with a trigger another snippet also uses, or a trigger that blocks or is blocked by another.</summary>
+    private HashSet<Snippet> WarnedSnippets()
+    {
+        var result = new HashSet<Snippet>();
+        if (_cfg == null) return result;
+        var all = _cfg.AllSnippets.ToList();
+        var duplicates = all.SelectMany(s => s.Triggers.Distinct()).GroupBy(t => t).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
+        foreach (var s in all.Where(s => s.Triggers.Any(duplicates.Contains))) result.Add(s);
+        foreach (var c in TriggerClashes.Find(all))
+        {
+            result.Add(c.Blocker);
+            result.Add(c.Blocked);
+        }
+        return result;
+    }
 
     private static bool Matches(Snippet s, string q)
     {
@@ -388,10 +401,11 @@ public partial class MainWindow : Window, IEditorHost
     {
         if (_tabs.TryGetValue(s, out var tab)) tab.Header = MakeHeader(s);
         if (_windows.TryGetValue(s, out var w)) w.UpdateTitle();
-        var duplicates = DuplicateTriggers();
+        var warned = WarnedSnippets();
+        foreach (var editor in AllEditors().Where(e => !ReferenceEquals(e.Snippet, s))) editor.RefreshChecks();
         foreach (var node in _nodes.Values)
         {
-            var warn = node.Snippet.Triggers.Any(duplicates.Contains);
+            var warn = warned.Contains(node.Snippet);
             if (warn != node.HasWarning || ReferenceEquals(node.Snippet, s))
             {
                 node.HasWarning = warn;
@@ -533,7 +547,7 @@ public partial class MainWindow : Window, IEditorHost
             ShowToast(Kind.Warn, "No editable file", "Every file in this configuration is read-only.");
             return;
         }
-        var s = _cfg.NewSnippet(file, group);
+        var s = _cfg.NewSnippet(file, group, _settings.NewSnippetWholeWord);
         SearchBox.Text = "";
         RebuildTree();
         OpenSnippet(s, focusTrigger: true);
@@ -557,7 +571,7 @@ public partial class MainWindow : Window, IEditorHost
                 : n.Contains('#') ? "A group name cannot contain #." : null);
         if (name == null) return;
         _cfg.AddGroup(file, name.Trim());
-        var s = _cfg.NewSnippet(file, name.Trim());
+        var s = _cfg.NewSnippet(file, name.Trim(), _settings.NewSnippetWholeWord);
         SearchBox.Text = "";
         RebuildTree();
         OpenSnippet(s, focusTrigger: true);
@@ -566,6 +580,24 @@ public partial class MainWindow : Window, IEditorHost
     }
 
     private void Save_Click(object sender, RoutedEventArgs e) => SaveAll();
+
+    private void TriggerSettings_Click(object sender, RoutedEventArgs e) => OpenTriggerSettings(this);
+
+    public void OpenTriggerSettings(Window? owner)
+    {
+        if (_cfg == null) return;
+        new TriggerSettingsWindow(owner ?? this, _cfg, _settings, AfterBulkChange).ShowDialog();
+    }
+
+    /// <summary>Many snippets changed at once (the trigger box): refresh the library, open editors and the status bar.</summary>
+    private void AfterBulkChange()
+    {
+        RebuildTree();
+        foreach (var editor in AllEditors()) editor.RefreshOptions();
+        foreach (var (s, tab) in _tabs) tab.Header = MakeHeader(s);
+        foreach (var w in _windows.Values) w.UpdateTitle();
+        UpdateStatus();
+    }
 
     private async void Reload_Click(object sender, RoutedEventArgs e)
     {
@@ -598,12 +630,12 @@ public partial class MainWindow : Window, IEditorHost
                 break;
             case EspansoState.NotInstalled:
                 EspansoStatusText.Text = "espanso command not found";
-                EspansoPill.Background = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xEA));
+                EspansoPill.Background = (Brush)FindResource("TagBrush");
                 EspansoStatusText.Foreground = (Brush)FindResource("MutedBrush");
                 break;
             default:
                 EspansoStatusText.Text = "Espanso status unknown";
-                EspansoPill.Background = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xEA));
+                EspansoPill.Background = (Brush)FindResource("TagBrush");
                 EspansoStatusText.Foreground = (Brush)FindResource("MutedBrush");
                 break;
         }

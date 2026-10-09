@@ -5,6 +5,16 @@ namespace EspansoEditor.Core.Model;
 /// <summary>Where an existing snippet sits in its file (character offsets into the \n-normalised text).</summary>
 public readonly record struct TextSpan(int Start, int End, int DashColumn);
 
+/// <summary>
+/// Where the "word" setting can be changed with a one-line edit (offsets into the file text), so switching
+/// "Only as a whole word" does not rewrite the rest of the snippet.
+/// </summary>
+/// <param name="KeyColumn">Column of the snippet's keys.</param>
+/// <param name="AfterFirstLine">Offset just after the first line, when the first key and its value fit on it.</param>
+/// <param name="WordLine">The whole line holding "word: ...", when it is a line of its own.</param>
+/// <param name="WordValue">The value after "word:", when it is a single plain word.</param>
+internal sealed record WordLayout(int KeyColumn, int? AfterFirstLine, (int Start, int End)? WordLine, (int Start, int End)? WordValue);
+
 /// <summary>One Espanso match, as the editor sees it.</summary>
 public sealed class Snippet
 {
@@ -40,6 +50,11 @@ public sealed class Snippet
     internal string? OriginalValueCanonical { get; set; }
     internal bool EndsWithBlockScalar { get; set; }
 
+    /// <summary>The meaning of the snippet as it is on disk, and its "word" setting there.</summary>
+    internal string? OriginalSignature { get; set; }
+    internal bool OriginalWord { get; set; }
+    internal WordLayout? WordLayout { get; set; }
+
     /// <summary>Comments that sat inside this snippet in the file; kept (as comment lines) if it is rewritten.</summary>
     public List<string> PreservedComments { get; } = new();
 
@@ -66,12 +81,15 @@ public sealed class Snippet
     }
 
     /// <summary>Stable text form of everything the editor can change. Used to check a save.</summary>
-    public string SemanticSignature()
+    public string SemanticSignature() => SemanticSignature(Word);
+
+    /// <summary>The signature with "word" taken as given, to tell "only the word setting changed" apart.</summary>
+    internal string SemanticSignature(bool word)
     {
         var sb = new StringBuilder();
         if (IsAdvanced) return "ADV|" + OriginalCanonical + "|" + Group;
         sb.Append(string.Join("\u001f", Triggers)).Append('|');
-        sb.Append(Label).Append('|').Append(Word).Append('|').Append(PropagateCase).Append('|').Append(ForceMode).Append('|');
+        sb.Append(Label).Append('|').Append(word).Append('|').Append(PropagateCase).Append('|').Append(ForceMode).Append('|');
         sb.Append(Group).Append('|').Append(UsesForm ? "form" : "replace").Append('|');
         sb.Append(Body.Signature());
         return sb.ToString();
