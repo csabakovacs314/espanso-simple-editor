@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3 (2026-10-09)
+
+- **Changed: "only where needed" is the default.** New snippets no longer start as whole word. Instead, when you add a trigger that would block a longer one (or be blocked by a shorter one), whole word is switched on for the short trigger by itself, with a message. The trigger box has three choices: only where needed, always, never.
+- **Fixed (code review):**
+  - Saving with about 2000 snippets froze the window for about 6 seconds; now under 1 second. The save no longer runs the blocked-trigger check, which never stops a save anyway.
+  - `left_word` / `right_word` snippets were reported as blocking longer triggers when they cannot.
+  - Missed warnings: a snippet whose own triggers block each other (`:br`, `:brx`), and "follow the case I type" triggers (`:ty` blocks `:Tyx`).
+  - Switching whole word off deleted a comment on the `word: true` line. Such a snippet is now rewritten and the comment kept.
+  - An unexpected value in settings.json for the whole-word choice is treated as "only where needed".
+
 ## 0.1.2 (2026-10-09)
 
 - **New: the trigger box** ("Triggers…" in the toolbar, or "All snippets…" next to "Only as a whole word").

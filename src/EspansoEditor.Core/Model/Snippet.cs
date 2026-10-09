@@ -30,6 +30,10 @@ public sealed class Snippet
     public bool Word { get; set; }
     public bool PropagateCase { get; set; }
 
+    /// <summary>Espanso left_word / right_word (read-only snippets): only fires at the start / end of a word.</summary>
+    public bool LeftWord { get; internal set; }
+    public bool RightWord { get; internal set; }
+
     /// <summary>null (automatic), "clipboard" or "keys".</summary>
     public string? ForceMode { get; set; }
 

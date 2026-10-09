@@ -138,7 +138,7 @@ public sealed class WholeWordTests : IDisposable
     [Fact]
     public void Switching_whole_word_off_removes_that_line()
     {
-        var withWord = Prefixes.Replace("  - trigger: \"/close\"\n    replace: \"Closing\"\n", "  - trigger: \"/close\"\n    replace: \"Closing\"\n    word: true # needed\n");
+        var withWord = Prefixes.Replace("  - trigger: \"/close\"\n    replace: \"Closing\"\n", "  - trigger: \"/close\"\n    replace: \"Closing\"\n    word: true\n");
         var f = Parse(withWord);
         var close = By(f, "/close");
         Assert.True(close.Word);
@@ -147,6 +147,45 @@ public sealed class WholeWordTests : IDisposable
         var text = FileRewriter.Rewrite(f, new HashSet<string>(), minimal: true);
         Assert.Null(Verifier.Verify(f, text));
         Assert.Equal(Prefixes, text);
+    }
+
+    [Fact]
+    public void A_comment_on_the_word_line_is_kept()
+    {
+        var withWord = Prefixes.Replace("    replace: \"Closing\"\n", "    replace: \"Closing\"\n    word: true # needed for /close2\n");
+        var f = Parse(withWord);
+        var close = By(f, "/close");
+        close.Word = false;
+        close.IsDirty = true;
+        var text = FileRewriter.Rewrite(f, new HashSet<string>(), minimal: true);
+        Assert.Null(Verifier.Verify(f, text));
+        Assert.Contains("# needed for /close2", text);
+        Assert.False(By(Parse(text), "/close").Word);
+    }
+
+    [Fact]
+    public void Left_and_right_word_snippets_only_block_where_they_can_fire()
+    {
+        var f = Parse("matches:\n  - trigger: \":a\"\n    replace: \"x\"\n    right_word: true\n  - trigger: \":ab\"\n    replace: \"y\"\n");
+        Assert.Empty(TriggerClashes.Find(f.Snippets));
+        f = Parse("matches:\n  - trigger: \"a\"\n    replace: \"x\"\n    left_word: true\n  - trigger: \":ab\"\n    replace: \"y\"\n");
+        Assert.Empty(TriggerClashes.Find(f.Snippets));
+    }
+
+    [Fact]
+    public void A_snippet_can_block_its_own_longer_trigger()
+    {
+        var f = Parse("matches:\n  - triggers: [\":br\", \":brx\"]\n    replace: \"x\"\n");
+        var c = Assert.Single(TriggerClashes.Find(f.Snippets));
+        Assert.Equal((":br", ":brx"), (c.Short, c.Long));
+    }
+
+    [Fact]
+    public void Follow_the_case_triggers_block_their_capitalised_forms()
+    {
+        var f = Parse("matches:\n  - trigger: \":ty\"\n    replace: \"thanks\"\n    propagate_case: true\n  - trigger: \":Tyx\"\n    replace: \"y\"\n");
+        var c = Assert.Single(TriggerClashes.Find(f.Snippets));
+        Assert.Equal((":ty", ":Tyx"), (c.Short, c.Long));
     }
 
     [Fact]
@@ -232,6 +271,21 @@ public sealed class WholeWordTests : IDisposable
         Assert.Empty(TriggerClashes.Find(cfg.AllSnippets));
         Assert.True(SaveService.Save(cfg, Options).Success);
         Assert.Equal(2, DiskText().Split('\n').Count(l => l == "    word: true"));
+    }
+
+    [Fact]
+    public void Adding_a_trigger_fixes_only_its_own_clashes()
+    {
+        var cfg = MakeConfig(Prefixes);
+        var s = cfg.NewSnippet(cfg.Files[0], "Jira");
+        s.Triggers.Add("/jirabug");
+        s.Body = new List<Run> { Run.Literal("Bug") };
+        var fix = TriggerClashes.FixableBlockersFor(s, cfg.AllSnippets);
+        Assert.Equal(new[] { "/jira" }, fix.Select(f => f.Triggers[0])); // /close is not touched
+
+        var shorter = cfg.NewSnippet(cfg.Files[0], "");
+        shorter.Triggers.Add("/m");
+        Assert.Same(shorter, Assert.Single(TriggerClashes.FixableBlockersFor(shorter, cfg.AllSnippets)));
     }
 
     [Fact]

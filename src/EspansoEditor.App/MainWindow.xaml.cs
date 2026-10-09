@@ -415,6 +415,18 @@ public partial class MainWindow : Window, IEditorHost
         UpdateStatus();
     }
 
+    public void TriggersChanged(Snippet s)
+    {
+        if (_cfg == null || _settings.WholeWordMode != WholeWord.Needed) return;
+        var fix = TriggerClashes.FixableBlockersFor(s, _cfg.AllSnippets);
+        if (fix.Count == 0) return;
+        _cfg.SetWholeWord(fix, true);
+        AfterBulkChange();
+        var names = string.Join(", ", fix.Select(f => f.DisplayName));
+        ShowToast(Kind.Info, "Whole word switched on: " + names,
+            "Its trigger would have fired before a longer one could be typed. Press Ctrl+S to save, or untick it in the snippet.");
+    }
+
     public void MoveSnippet(Snippet s, MatchFile file, string group)
     {
         try
@@ -547,7 +559,7 @@ public partial class MainWindow : Window, IEditorHost
             ShowToast(Kind.Warn, "No editable file", "Every file in this configuration is read-only.");
             return;
         }
-        var s = _cfg.NewSnippet(file, group, _settings.NewSnippetWholeWord);
+        var s = _cfg.NewSnippet(file, group, _settings.WholeWordMode == WholeWord.Always);
         SearchBox.Text = "";
         RebuildTree();
         OpenSnippet(s, focusTrigger: true);
@@ -571,7 +583,7 @@ public partial class MainWindow : Window, IEditorHost
                 : n.Contains('#') ? "A group name cannot contain #." : null);
         if (name == null) return;
         _cfg.AddGroup(file, name.Trim());
-        var s = _cfg.NewSnippet(file, name.Trim(), _settings.NewSnippetWholeWord);
+        var s = _cfg.NewSnippet(file, name.Trim(), _settings.WholeWordMode == WholeWord.Always);
         SearchBox.Text = "";
         RebuildTree();
         OpenSnippet(s, focusTrigger: true);

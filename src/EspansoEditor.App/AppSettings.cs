@@ -9,8 +9,11 @@ internal sealed class AppSettings
     public string? LastFolder { get; set; }
     public bool AutoOpen { get; set; } = true;
 
-    /// <summary>New snippets start with "Only as a whole word" ticked.</summary>
-    public bool NewSnippetWholeWord { get; set; } = true;
+    /// <summary>
+    /// When "Only as a whole word" is switched on by itself: "needed" (when a trigger would block a longer one),
+    /// "always" (every new snippet) or "never".
+    /// </summary>
+    public string WholeWordMode { get; set; } = WholeWord.Needed;
 
     private static string FilePath => Path.Combine(App.DataDir, "settings.json");
 
@@ -19,7 +22,16 @@ internal sealed class AppSettings
         try
         {
             if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings();
+            {
+                var s = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings();
+                s.WholeWordMode = (s.WholeWordMode ?? "").Trim().ToLowerInvariant() switch
+                {
+                    WholeWord.Always => WholeWord.Always,
+                    WholeWord.Never => WholeWord.Never,
+                    _ => WholeWord.Needed,
+                };
+                return s;
+            }
         }
         catch
         {
@@ -40,4 +52,12 @@ internal sealed class AppSettings
             // Not worth interrupting the user over.
         }
     }
+}
+
+/// <summary>The choices for <see cref="AppSettings.WholeWordMode"/>.</summary>
+internal static class WholeWord
+{
+    public const string Needed = "needed";
+    public const string Always = "always";
+    public const string Never = "never";
 }

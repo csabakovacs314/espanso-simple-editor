@@ -23,20 +23,26 @@ public static class TriggerClashes
     public static List<TriggerClash> Find(IEnumerable<Snippet> snippets)
     {
         var all = snippets.ToList();
-        var byTrigger = new Dictionary<string, List<Snippet>>(StringComparer.Ordinal);
+        // Every text that makes a snippet fire: its triggers, plus the capitalised and upper-case forms
+        // when it follows the case you type (propagate_case).
+        var byTrigger = new Dictionary<string, List<(Snippet Snippet, string Trigger)>>(StringComparer.Ordinal);
         foreach (var s in all)
         {
             foreach (var t in s.Triggers.Distinct())
             {
                 if (string.IsNullOrEmpty(t)) continue;
-                if (!byTrigger.TryGetValue(t, out var list)) byTrigger[t] = list = new List<Snippet>();
-                list.Add(s);
+                foreach (var form in Forms(t, s.PropagateCase))
+                {
+                    if (!byTrigger.TryGetValue(form, out var list)) byTrigger[form] = list = new();
+                    if (!list.Contains((s, t))) list.Add((s, t));
+                }
             }
         }
         var lookup = byTrigger.GetAlternateLookup<ReadOnlySpan<char>>();
 
         var result = new List<TriggerClash>();
         var seen = new HashSet<(Snippet, string, Snippet, string)>();
+        // Note: one snippet can block itself, e.g. triggers [":br", ":brx"]: ":brx" can never be typed.
         foreach (var y in all)
         {
             foreach (var longer in y.Triggers.Distinct())
@@ -49,19 +55,30 @@ public static class TriggerClashes
                     for (var end = start + 1; end < span.Length; end++)
                     {
                         if (!lookup.TryGetValue(span[start..end], out var blockers)) continue;
-                        foreach (var x in blockers)
+                        foreach (var (x, trigger) in blockers)
                         {
-                            if (ReferenceEquals(x, y)) continue;
-                            var fires = !x.Word || ((start == 0 || IsSeparator(span[start - 1])) && IsSeparator(span[end]));
+                            // A whole-word trigger needs separators on both sides; left_word / right_word on one side.
+                            var needLeft = x.Word || x.LeftWord;
+                            var needRight = x.Word || x.RightWord;
+                            var fires = (!needLeft || start == 0 || IsSeparator(span[start - 1]))
+                                        && (!needRight || IsSeparator(span[end]));
                             if (!fires) continue;
-                            var shorter = longer[start..end];
-                            if (seen.Add((x, shorter, y, longer))) result.Add(new TriggerClash(x, shorter, y, longer));
+                            if (seen.Add((x, trigger, y, longer))) result.Add(new TriggerClash(x, trigger, y, longer));
                         }
                     }
                 }
             }
         }
         return result;
+    }
+
+    private static IEnumerable<string> Forms(string trigger, bool propagateCase)
+    {
+        yield return trigger;
+        if (!propagateCase) yield break;
+        var i = trigger.ToList().FindIndex(char.IsLetter);
+        if (i >= 0) yield return trigger[..i] + char.ToUpperInvariant(trigger[i]) + trigger[(i + 1)..];
+        yield return trigger.ToUpperInvariant();
     }
 
     /// <summary>Clashes this snippet is part of, as the blocker or the blocked one.</summary>
@@ -74,4 +91,11 @@ public static class TriggerClashes
     /// </summary>
     public static List<Snippet> FixableBlockers(IEnumerable<Snippet> snippets) =>
         Find(snippets).Select(c => c.Blocker).Where(b => !b.Word && !b.IsReadOnly).Distinct().ToList();
+
+    /// <summary>
+    /// Like <see cref="FixableBlockers"/>, but only for clashes this snippet is part of: the snippet itself when its
+    /// trigger blocks a longer one, or the other snippet when that one blocks this snippet's trigger.
+    /// </summary>
+    public static List<Snippet> FixableBlockersFor(Snippet s, IEnumerable<Snippet> snippets) =>
+        For(s, snippets).Select(c => c.Blocker).Where(b => !b.Word && !b.IsReadOnly).Distinct().ToList();
 }

@@ -19,6 +19,9 @@ public interface IEditorHost
 {
     EspansoConfig Config { get; }
     void SnippetChanged(Snippet s);
+
+    /// <summary>A trigger was added or removed; whole word may be switched on where a trigger would block another.</summary>
+    void TriggersChanged(Snippet s);
     void MoveSnippet(Snippet s, MatchFile file, string group);
     void PopOut(Snippet s);
     void DeleteSnippet(Snippet s);
@@ -342,6 +345,7 @@ public partial class SnippetEditor : UserControl
                     Snippet.Triggers.Remove(t);
                     BuildTriggers();
                     Changed();
+                    _host.TriggersChanged(Snippet);
                 };
                 panel.Children.Add(remove);
             }
@@ -387,6 +391,7 @@ public partial class SnippetEditor : UserControl
         if (!Snippet.Triggers.Contains(t)) Snippet.Triggers.Add(t);
         BuildTriggers();
         Changed();
+        _host.TriggersChanged(Snippet);
         _newTriggerBox?.Focus();
     }
 

@@ -48,7 +48,7 @@ public static class SaveService
 
         // 1. Check snippets that will be written.
         var touched = affected.SelectMany(f => f.Snippets).Where(s => s.IsDirty || s.IsNew || s.IsMoved).ToHashSet();
-        result.BlockingIssues.AddRange(Validator.Check(cfg).Where(i => i.Severity == Severity.Error && touched.Contains(i.Snippet)));
+        result.BlockingIssues.AddRange(touched.SelectMany(s => Validator.Check(s, cfg, clashWarnings: false)).Where(i => i.Severity == Severity.Error));
         if (result.BlockingIssues.Count > 0)
         {
             result.Errors.Add("Some snippets need fixing before they can be saved.");

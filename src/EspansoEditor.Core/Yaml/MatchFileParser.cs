@@ -263,7 +263,10 @@ public static partial class MatchFileParser
             {
                 wordValue = ((int)sv.Start.Index, (int)sv.End.Index);
                 var before = text[lines.Start(line)..(int)k.Start.Index];
-                if (line != dashLine && before.Trim().Length == 0) wordLine = (lines.Start(line), lines.LineEndWithBreak(line));
+                var after = text[(int)sv.End.Index..lines.LineEndWithBreak(line)];
+                // A comment on the line would be lost with it; such a snippet is rewritten instead, which keeps comments.
+                if (line != dashLine && before.Trim().Length == 0 && after.Trim().Length == 0)
+                    wordLine = (lines.Start(line), lines.LineEndWithBreak(line));
             }
             break;
         }

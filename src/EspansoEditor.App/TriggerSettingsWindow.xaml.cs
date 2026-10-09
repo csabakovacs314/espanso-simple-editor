@@ -27,7 +27,12 @@ public partial class TriggerSettingsWindow : Window
         _settings = settings;
         _changed = changed;
         _loading = true;
-        NewDefaultBox.IsChecked = settings.NewSnippetWholeWord;
+        (settings.WholeWordMode switch
+        {
+            WholeWord.Always => AlwaysRadio,
+            WholeWord.Never => NeverRadio,
+            _ => NeededRadio,
+        }).IsChecked = true;
         _loading = false;
         Refresh();
     }
@@ -101,10 +106,12 @@ public partial class TriggerSettingsWindow : Window
         Refresh();
     }
 
-    private void NewDefault_Changed(object sender, RoutedEventArgs e)
+    private void Mode_Changed(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        _settings.NewSnippetWholeWord = NewDefaultBox.IsChecked == true;
+        _settings.WholeWordMode = AlwaysRadio.IsChecked == true ? WholeWord.Always
+            : NeverRadio.IsChecked == true ? WholeWord.Never
+            : WholeWord.Needed;
         _settings.Save();
     }
 

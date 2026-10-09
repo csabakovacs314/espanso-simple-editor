@@ -51,6 +51,14 @@ internal static partial class SnippetReader
             }
             switch (key)
             {
+                case "left_word" or "right_word":
+                    if (TryBool(v, out var side) && side)
+                    {
+                        if (key == "left_word") s.LeftWord = true;
+                        else s.RightWord = true;
+                    }
+                    Advanced("uses " + Friendly[key]);
+                    break;
                 case "trigger":
                     if (v is YamlScalarNode { Value: { } t }) s.Triggers.Add(t);
                     else Advanced("has an unusual trigger");

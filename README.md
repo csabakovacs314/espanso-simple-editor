@@ -1,4 +1,4 @@
-# Espanso Simple Editor 0.1.2
+# Espanso Simple Editor 0.1.3
 
 Edit your Espanso snippets one at a time, as text, in a PhraseExpress-style window with a dark theme. You never see YAML. On save the editor writes valid Espanso YAML back, and Espanso reloads it by itself.
 
@@ -25,16 +25,18 @@ Idea by Csaba Kovacs.
 4. **Insert:** adds a date, time, clipboard, cursor position, a question Espanso asks first ("ask when typing"), PowerShell output, a random choice or a global variable. They appear as coloured chips. Double-click a chip to change it.
 5. **Save:** Ctrl+S. Espanso picks the change up by itself. "Reload Espanso" is only needed if `auto_restart` is off.
 6. **Triggers… (toolbar):** the trigger box. "All snippets…" next to "Only as a whole word" opens it too.
-   - **New snippets:** start as whole word. This is on by default; untick it to make new snippets fire immediately.
-   - **All snippets:** "Set all to whole word" or "Set all to none".
-   - **Only where needed:** whole word just for the short triggers that block longer ones.
+   - **When to switch whole word on by itself:** "Only where needed" (the default) turns it on automatically when a trigger you add would block a longer one, and tells you. "Always" makes every new snippet whole word; "Never" leaves it off.
+   - **Only where needed (button):** whole word just for the short triggers that already block longer ones. This is the recommended fix for an existing file.
+   - **All snippets:** "Set all to whole word" or "Set all to none". Usually not what you want: with all on, every trigger waits for a space or Enter, and that character stays after the text, so multi-line templates end with an extra space.
    - **Undo** reverses the last of these. Nothing is written until Ctrl+S.
 
 ## Whole word, and triggers that block each other
 
 Espanso expands a trigger the moment you finish typing it. If one trigger is the start of another (`/jira` and `/jirauao`), the short one always fires first, so the long one can never be typed. The library marks both with a warning sign, and the snippet explains it.
 
-"Only as a whole word" (Espanso `word: true`) fixes it: the trigger then fires only after a space, Enter or punctuation, and that character stays after the text. Switching it changes one line per snippet in the file (`word: true` is added or removed), nothing else.
+"Only as a whole word" (Espanso `word: true`) fixes it: the trigger then fires only after a space, Enter or punctuation, and that character stays after the text. Switching it changes one line per snippet in the file (`word: true` is added or removed), nothing else. If that line has a comment, the snippet is rewritten instead so the comment is kept.
+
+The check also covers `left_word` / `right_word` snippets, a snippet whose own triggers block each other (`:br` and `:brx`), and "follow the case I type" triggers (`:ty` also fires on `:Ty`).
 
 Keys: Ctrl+S save, Ctrl+N new snippet, Ctrl+F search, Ctrl+W close tab.
 
@@ -77,4 +79,4 @@ The app uses a dark theme: Windows 11 style dark controls and a dark title bar (
 - `src\EspansoEditor.Core`: reading, writing, checking and saving. No UI, fully tested.
 - `src\EspansoEditor.App`: the WPF window. Colours live in `App.xaml`.
 - `src\snipconv`: the command-line checker.
-- `tests\EspansoEditor.Tests`: 68 tests, including your file's style (groups, trailing spaces, no final line break).
+- `tests\EspansoEditor.Tests`: 73 tests, including your file's style (groups, trailing spaces, no final line break).

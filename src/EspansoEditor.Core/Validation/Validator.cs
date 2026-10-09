@@ -15,7 +15,9 @@ public static partial class Validator
 
     public static List<Issue> Check(EspansoConfig cfg) => cfg.AllSnippets.SelectMany(s => Check(s, cfg)).ToList();
 
-    public static IEnumerable<Issue> Check(Snippet s, EspansoConfig cfg)
+    /// <param name="clashWarnings">Include the "blocks a longer trigger" warnings. They never block a save, and with
+    /// thousands of snippets they are the slow part, so the save leaves them out.</param>
+    public static IEnumerable<Issue> Check(Snippet s, EspansoConfig cfg, bool clashWarnings = true)
     {
         if (s.IsReadOnly) yield break;
 
@@ -34,7 +36,8 @@ public static partial class Validator
                 yield return new Issue(s, Severity.Warning, $"\"{t}\" is also the trigger of \"{other.DisplayName}\" in {other.File.RelativePath}.");
         }
 
-        foreach (var issue in ClashWarnings(s, cfg)) yield return issue;
+        if (clashWarnings)
+            foreach (var issue in ClashWarnings(s, cfg)) yield return issue;
 
         var body = BodyText.Normalize(s.Body);
         if (body.Count == 0) yield return new Issue(s, Severity.Warning, "The text is empty.");

@@ -11,10 +11,15 @@
 
         <Border Style="{StaticResource Card}" Margin="0,16,0,0">
             <StackPanel>
-                <TextBlock Text="New snippets" Style="{StaticResource FieldLabel}"/>
-                <CheckBox x:Name="NewDefaultBox" Content="Start new snippets as whole word" Checked="NewDefault_Changed" Unchecked="NewDefault_Changed"/>
+                <TextBlock Text="When to switch whole word on by itself" Style="{StaticResource FieldLabel}"/>
+                <RadioButton x:Name="NeededRadio" GroupName="ww" Checked="Mode_Changed"
+                             Content="Only where needed (recommended): when a trigger you add would block a longer one"/>
+                <RadioButton x:Name="AlwaysRadio" GroupName="ww" Checked="Mode_Changed" Margin="0,4,0,0"
+                             Content="Always: every new snippet starts as whole word"/>
+                <RadioButton x:Name="NeverRadio" GroupName="ww" Checked="Mode_Changed" Margin="0,4,0,0"
+                             Content="Never: new snippets fire the moment you finish the trigger"/>
                 <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12.5" TextWrapping="Wrap" Margin="0,4,0,0"
-                           Text="You can still switch it per snippet with the box in its Trigger section."/>
+                           Text="You can still switch it per snippet with the box in its Trigger section. Whole word waits for a space or Enter, and that character stays after the text."/>
             </StackPanel>
         </Border>
 
@@ -23,7 +28,8 @@
                 <TextBlock Text="All snippets" Style="{StaticResource FieldLabel}"/>
                 <TextBlock x:Name="CountText" TextWrapping="Wrap"/>
                 <WrapPanel Margin="0,10,0,0">
-                    <Button x:Name="AllOnButton" Content="Set all to whole word" Margin="0,0,8,0" Click="AllOn_Click"/>
+                    <Button x:Name="AllOnButton" Content="Set all to whole word" Margin="0,0,8,0" Click="AllOn_Click"
+                            ToolTip="Every trigger then waits for a space or Enter, which stays after the text. Usually 'only where needed' below is the better choice."/>
                     <Button x:Name="AllOffButton" Content="Set all to none" Click="AllOff_Click"
                             ToolTip="Every trigger fires the moment you finish typing it (Espanso's default)."/>
                 </WrapPanel>
