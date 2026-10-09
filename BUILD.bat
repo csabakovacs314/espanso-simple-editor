@@ -31,6 +31,15 @@ dotnet publish src\snipconv -c Release -r win-x64 --self-contained false -p:Publ
 if errorlevel 1 goto :fail
 
 echo.
+echo [docs] Jira versions of the guides...
+where py >nul 2>nul
+if errorlevel 1 (
+  echo   Python not found: skipped. The .jira.txt files in docs stay as they are.
+) else (
+  py tools\md2jira.py docs\Espanso-Guide.md docs\Espanso-Guide-Short.md
+)
+
+echo.
 echo Done.
 echo   dist\small\EspansoSimpleEditor.exe
 echo   dist\portable\EspansoSimpleEditor.exe

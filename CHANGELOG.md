@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5 (2026-10-09)
+
+- **New: guides for Jira.** `docs\Espanso-Guide-Short` (for colleagues) and `docs\Espanso-Guide` (full), each as Markdown for Jira Cloud and `.jira.txt` wiki markup for Jira Server, with four mockup screenshots in `docs\images`.
+- **New: `tools\md2jira.py`**, JOSIP's Markdown to Jira converter, extended for pictures (`!name.png|width=900!`), an "In short" panel, tip and warning boxes, and a table of contents. BUILD.bat runs it when Python is installed.
+- The screenshots are mockups drawn from `docs\mockups\mockup.html` in the app's colours, not captures of the running app.
+- No change to the app itself.
+
 ## 0.1.4 (2026-10-09)
 
 - **New: formatted snippets.** A format switch on every snippet: Plain text, Jira Cloud (Markdown) or HTML (formatted paste).

@@ -1,4 +1,4 @@
-# Espanso Simple Editor 0.1.4
+# Espanso Simple Editor 0.1.5
 
 Edit your Espanso snippets one at a time, as text, in a PhraseExpress-style window with a dark theme. You never see YAML. On save the editor writes valid Espanso YAML back, and Espanso reloads it by itself.
 
@@ -79,9 +79,20 @@ The app uses a dark theme: Windows 11 style dark controls and a dark title bar (
 - **Profiles:** editing `config\` app-specific profiles.
 - **Copy and paste:** copying text pastes it as plain text, so chips are not carried across.
 
+## Guides for colleagues (Jira)
+
+`docs\` holds a short and a full guide to Espanso and this editor, with mockup screenshots in `docs\images\`:
+
+- **Jira Cloud:** paste the `.md` file, then drag the pictures in.
+- **Jira Server or Data Center:** attach the pictures, then paste the `.jira.txt` file in the Text (wiki markup) tab.
+
+`docs\README-JIRA.txt` has the steps. The `.jira.txt` files are made from the `.md` files by `tools\md2jira.py` (from JOSIP, extended for pictures and boxes); BUILD.bat runs it when Python is installed.
+
 ## Project layout
 
 - `src\EspansoEditor.Core`: reading, writing, checking and saving. No UI, fully tested.
 - `src\EspansoEditor.App`: the WPF window. Colours live in `App.xaml`.
 - `src\snipconv`: the command-line checker.
+- `tools\md2jira.py`: Markdown to Jira wiki markup.
+- `docs\`: guides for Jira, pictures and the mockup they are drawn from.
 - `tests\EspansoEditor.Tests`: 109 tests, including your file's style (groups, trailing spaces, no final line break).

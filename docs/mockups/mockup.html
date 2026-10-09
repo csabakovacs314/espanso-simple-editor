@@ -1,0 +1,322 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Espanso Simple Editor mockups</title>
+<style>
+  :root {
+    --ground:#161818; --side:#1C1F1F; --panel:#212424; --card:#272A2A; --line:#363A3A; --soft:#2E3232;
+    --ink:#E8E8E3; --label:#C4C6BF; --muted:#A0A29B; --hint:#7E817B; --tag:#303434;
+    --btn:#2A2E2E; --btnline:#434848; --accent:#3CC0B2; --accentText:#8FDDD2; --accentSoft:#183A36;
+    --primary:#0F7F74; --warn:#F2B862; --warnSoft:#342A15; --warnLine:#6A5323; --status:#0F3F3A; --statusInk:#DDF3EF;
+    --chipF:#1D2A48; --chipFL:#3B5590; --chipFI:#AFC6FF; --chipV:#362A12; --chipVL:#7A5B22; --chipVI:#F6CB7D;
+    --chipC:#3B1C2A; --chipCL:#7C3756; --chipCI:#FF9DC4; --trig:#183A36; --trigL:#2F6B63; --code:#323737;
+    --mono: "DejaVu Sans Mono", monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0b0c0c; font-family:Inter, sans-serif; font-size:13.5px; color:var(--ink); }
+  .shot { width:1280px; height:800px; position:relative; overflow:hidden; background:var(--ground); display:flex; flex-direction:column; }
+  .titlebar { height:32px; background:#1a1c1c; display:flex; align-items:center; padding:0 12px; font-size:12px; color:var(--label); flex:none; }
+  .titlebar .logo { width:16px; height:16px; border-radius:4px; background:var(--primary); margin-right:10px; display:grid; place-items:center; font-size:10px; font-weight:700; color:#fff; }
+  .titlebar .ctl { margin-left:auto; display:flex; gap:26px; color:var(--muted); font-size:12px; }
+  .toolbar { background:var(--side); border-bottom:1px solid var(--line); padding:8px 14px; display:flex; align-items:center; gap:8px; flex:none; }
+  .btn { background:var(--btn); border:1px solid var(--btnline); border-radius:7px; padding:6px 12px; min-height:32px; display:inline-flex; align-items:center; gap:6px; font-weight:500; color:var(--ink); white-space:nowrap; }
+  .btn.primary { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+  .btn.quiet { background:transparent; border-color:transparent; padding:4px 7px; min-height:26px; }
+  .ico { width:14px; height:14px; display:inline-block; }
+  .search { width:230px; height:32px; border-radius:6px; background:#1a1d1d; border:1px solid var(--line); border-bottom-color:#5a5f5f; color:var(--hint); display:flex; align-items:center; padding:0 12px; margin-left:8px; }
+  .pill { white-space:nowrap; border-radius:14px; padding:5px 12px; font-size:12.5px; background:var(--accentSoft); color:var(--accentText); }
+  .spacer { flex:1; }
+  .main { flex:1; display:flex; min-height:0; }
+  .lib { width:330px; background:var(--side); border-right:5px solid var(--line); padding:8px 8px; overflow:hidden; flex:none; }
+  .file { display:flex; align-items:center; gap:8px; padding:5px 6px 4px; font-weight:600; font-size:14px; }
+  .count { color:var(--muted); font-size:12px; font-weight:400; }
+  .group { color:var(--muted); font-size:11.5px; font-weight:600; padding:9px 0 3px 28px; }
+  .snip { padding:4px 8px 4px 40px; border-radius:6px; position:relative; }
+  .snip .t { font-size:13.5px; }
+  .snip .d { font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .snip.sel { background:#2a3030; }
+  .snip.sel::before { content:""; position:absolute; left:28px; top:9px; bottom:9px; width:3px; border-radius:2px; background:var(--accent); }
+  .snip .warn { position:absolute; left:26px; top:6px; color:var(--warn); font-size:11px; }
+  .right { flex:1; background:var(--panel); display:flex; flex-direction:column; min-width:0; }
+  .tabs { display:flex; gap:2px; padding:6px 10px 0; border-bottom:1px solid var(--line); flex:none; }
+  .tab { padding:7px 12px 8px; border-radius:6px 6px 0 0; color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .tab.on { color:var(--ink); background:var(--panel); box-shadow:inset 0 -2px 0 var(--accent); }
+  .tab .x { font-size:10px; color:var(--hint); }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--ink); display:inline-block; }
+  .editor { padding:16px 22px; overflow:hidden; flex:1; }
+  .lbl { font-size:12.5px; font-weight:600; color:var(--label); margin-bottom:6px; }
+  .row { display:flex; gap:12px; align-items:flex-end; }
+  .field { height:34px; border-radius:6px; background:#1a1d1d; border:1px solid var(--line); border-bottom-color:#5a5f5f; display:flex; align-items:center; padding:0 11px; }
+  .combo { white-space:nowrap; overflow:hidden; height:34px; border-radius:6px; background:var(--btn); border:1px solid var(--btnline); display:flex; align-items:center; padding:0 11px; justify-content:space-between; gap:10px; }
+  .combo::after { content:"⌄"; color:var(--muted); font-size:13px; margin-top:-5px; }
+  .box { margin-top:14px; border:1px solid var(--line); border-radius:10px; background:var(--card); overflow:hidden; }
+  .boxhead { background:var(--side); border-bottom:1px solid var(--soft); padding:6px 10px; display:flex; align-items:center; gap:4px; }
+  .fmtbtn { min-width:30px; height:28px; border-radius:6px; display:grid; place-items:center; color:var(--ink); font-size:13px; padding:0 6px; }
+  .fmtbtn.on { background:#323838; }
+  .sep { width:1px; height:18px; background:var(--line); margin:0 6px; }
+  .text { padding:12px 16px; font-size:14px; line-height:23px; min-height:250px; }
+  .text ul, .text ol { margin:0; padding-left:24px; }
+  .text h3 { margin:0; font-size:16.5px; line-height:26px; }
+  .hint { color:var(--muted); font-size:12px; padding:0 12px 9px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+  .card { border:1px solid var(--line); border-radius:10px; background:var(--card); padding:12px 14px; }
+  .trig { display:inline-flex; align-items:center; gap:6px; background:var(--trig); border:1px solid var(--trigL); border-radius:7px; padding:3px 8px 3px 10px; font-family:var(--mono); font-weight:600; color:var(--accentText); font-size:13px; }
+  .trig .x { color:var(--muted); font-size:10px; font-family:Inter; }
+  .check { display:flex; align-items:center; gap:9px; margin-top:9px; }
+  .cb { width:18px; height:18px; border-radius:4px; border:1px solid #6b7070; display:grid; place-items:center; font-size:12px; flex:none; }
+  .cb.on { background:var(--accent); border-color:var(--accent); color:#0b1f1d; font-weight:700; }
+  .link { color:var(--accentText); font-size:12.5px; margin-left:auto; }
+  .preview { font-size:13.5px; line-height:21px; white-space:pre-wrap; font-family:Inter; }
+  .ph { color:var(--muted); font-style:italic; }
+  .chip { display:inline-flex; align-items:center; gap:5px; border-radius:5px; padding:0 6px; border:1px solid; font-size:13px; line-height:20px; vertical-align:1px; }
+  .chip b { font-size:10px; letter-spacing:.3px; }
+  .chip.v { background:var(--chipV); border-color:var(--chipVL); color:var(--chipVI); }
+  .chip.f { background:var(--chipF); border-color:var(--chipFL); color:var(--chipFI); }
+  .chip.c { background:var(--chipC); border-color:var(--chipCL); color:var(--chipCI); }
+  .statusbar { background:var(--status); color:var(--statusInk); font-size:12px; padding:5px 14px; display:flex; flex:none; }
+  .code { font-family:var(--mono); background:var(--code); border-radius:3px; padding:0 4px; font-size:13px; }
+  .toast { position:absolute; right:24px; bottom:46px; width:420px; background:var(--card); border:1px solid var(--btnline); border-radius:10px; padding:12px 14px; display:flex; gap:12px; box-shadow:0 10px 30px rgba(0,0,0,.55); }
+  .toast .ok { color:var(--accent); font-size:18px; }
+  .toast .ti { font-weight:600; font-size:14px; color:var(--accentText); }
+  .toast .bo { color:var(--label); margin-top:2px; }
+  .dim::after { content:""; position:absolute; inset:0; background:rgba(0,0,0,.55); }
+  .dialog { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:640px; background:var(--panel); border:1px solid var(--btnline); border-radius:10px; z-index:5; box-shadow:0 20px 60px rgba(0,0,0,.6); overflow:hidden; }
+  .dialog .dt { height:32px; background:#1a1c1c; display:flex; align-items:center; padding:0 12px; font-size:12px; color:var(--label); }
+  .dialog .db { padding:18px 24px 20px; }
+  .h { font-size:15px; font-weight:600; margin-bottom:4px; }
+  .muted { color:var(--muted); }
+  .radio { display:flex; gap:9px; align-items:center; margin-top:6px; }
+  .rb { width:18px; height:18px; border-radius:50%; border:1px solid #6b7070; display:grid; place-items:center; flex:none; }
+  .rb.on { border-color:var(--accent); }
+  .rb.on::after { content:""; width:9px; height:9px; border-radius:50%; background:var(--accent); }
+  .clash { font-family:var(--mono); color:var(--warn); font-size:13px; line-height:21px; }
+  .load { flex:1; display:grid; place-items:center; }
+  .loadcard { width:660px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:28px 32px; }
+  .banner { margin-top:14px; padding:10px 12px; border-radius:8px; border:1px solid var(--warnLine); background:var(--warnSoft); }
+</style>
+</head>
+<body>
+
+<!-- 1. Main window, Jira Cloud snippet -->
+<div class="shot" id="main">
+  <div class="titlebar"><div class="logo">E</div>Espanso Simple Editor<div class="ctl"><span>—</span><span>☐</span><span>✕</span></div></div>
+  <div class="toolbar">
+    <span class="btn">＋ New snippet</span><span class="btn">New group…</span><span class="btn">⌨ Triggers…</span><span class="btn primary">💾 Save</span>
+    <span class="search">Search snippets or triggers</span>
+    <span class="spacer"></span>
+    <span class="pill">Espanso running · reloads after each save</span><span class="btn">⟳ Reload Espanso</span><span class="btn">Change folder</span>
+  </div>
+  <div class="main">
+    <div class="lib">
+      <div class="file">🗀 base <span class="count">22 snippets</span></div>
+      <div class="group">Examples</div>
+      <div class="snip"><div class="t">:espanso</div><div class="d">Hi there!</div></div>
+      <div class="snip"><div class="t">:date</div><div class="d">:date</div></div>
+      <div class="group">Ticketing &amp; Triage Templates</div>
+      <div class="snip sel"><div class="t">Jira bug report</div><div class="d">/jira</div></div>
+      <div class="snip"><div class="t">Jira: UAO issue</div><div class="d">/jirauao</div></div>
+      <div class="snip"><div class="t">Jira: plugin issue</div><div class="d">/jiraplugin</div></div>
+      <div class="group">Customer Communication</div>
+      <div class="snip"><div class="t">Closing note</div><div class="d">/close</div></div>
+      <div class="snip"><div class="t">Closing note, no reply</div><div class="d">/close2</div></div>
+      <div class="snip"><div class="t">Satisfaction survey</div><div class="d">/csat</div></div>
+      <div class="group">Signatures</div>
+      <div class="snip"><div class="t">Signature</div><div class="d">/me</div></div>
+    </div>
+    <div class="right">
+      <div class="tabs"><div class="tab on">Jira bug report <span class="dot"></span> <span class="x">✕</span></div><div class="tab">Closing note <span class="x">✕</span></div></div>
+      <div class="editor">
+        <div class="row">
+          <div style="flex:1"><div class="lbl">Description</div><div class="field" style="font-size:15px;font-weight:600">Jira bug report</div></div>
+          <div style="width:300px"><div class="lbl">Saved in</div><div class="combo">base › Ticketing &amp; Triage Templates</div></div>
+          <span class="btn">⧉ Own window</span><span class="btn">🗑 Delete</span>
+        </div>
+        <div class="box">
+          <div class="boxhead">
+            <div class="combo" style="width:220px;height:32px">Jira Cloud (Markdown)</div>
+            <span style="width:8px"></span>
+            <span class="fmtbtn" style="font-weight:700">B</span><span class="fmtbtn" style="font-style:italic;font-family:serif">I</span><span class="fmtbtn" style="font-family:var(--mono);font-size:12px">&lt;/&gt;</span>
+            <span class="sep"></span><span class="fmtbtn">H1</span><span class="fmtbtn">H2</span><span class="fmtbtn">H3</span><span class="fmtbtn">¶</span>
+            <span class="sep"></span><span class="fmtbtn on">•&nbsp; List</span><span class="fmtbtn">1.&nbsp; List</span>
+            <span class="spacer"></span><span class="btn">Insert ⌄</span>
+          </div>
+          <div class="text">
+            <b>Description:</b><br><br>
+            <ul>
+              <li><b>Source:</b> Customer / Internal</li>
+              <li><b>Customer Information:</b> [Include Instance/Region]</li>
+              <li><b>Customer Expected Outcome:</b></li>
+              <li><b>Customer Actual Outcome:</b></li>
+              <li><b>Steps to Reproduce:</b></li>
+              <li><b>Investigative/Troubleshooting Steps Taken:</b></li>
+              <li><b>Customer Issue Start Date:</b> <span class="chip v"><b>DATE</b> 09/10/2026</span></li>
+              <li><b>Has it worked before in a customer environment?</b> Yes / No</li>
+            </ul>
+          </div>
+          <div class="hint">Saved as Markdown text: **bold**, * bullets, ### headings, `code`. Jira Cloud turns it into formatting. Chips are filled in when it runs.</div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="lbl">Trigger</div>
+            <div style="display:flex;gap:6px;align-items:center"><span class="trig">/jira <span class="x">✕</span></span><span class="field" style="width:150px;height:30px;font-family:var(--mono)"></span><span class="btn">Add</span></div>
+            <div class="check"><span class="cb on">✓</span>Only as a whole word<span class="link">All snippets…</span></div>
+            <div class="check"><span class="cb"></span>Follow the case I type (:Br gives Best regards)</div>
+            <div class="check"><span class="cb on">✓</span>End with a line break</div>
+            <div class="check" style="margin-top:12px">Typing method <div class="combo" style="width:200px;height:30px;margin-left:8px">Automatic</div></div>
+          </div>
+          <div class="card">
+            <div class="lbl">Espanso will type</div>
+            <div class="preview">**Description:**
+
+* **Source:** Customer / Internal
+* **Customer Information:** [Include Instance/Region]
+* **Customer Expected Outcome:**
+* **Customer Issue Start Date:** <span class="ph">09/10/2026</span>
+…</div>
+            <div class="muted" style="font-size:12px;margin-top:8px">Example values for right now. Grey parts are filled in when the snippet runs.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar"><span>22 snippets in 1 file(s) · %APPDATA%\espanso\match</span><span class="spacer"></span><span>Unsaved changes: 1 · Ctrl+S to save</span></div>
+</div>
+
+<!-- 2. Trigger box -->
+<div class="shot dim" id="triggers">
+  <div class="titlebar"><div class="logo">E</div>Espanso Simple Editor<div class="ctl"><span>—</span><span>☐</span><span>✕</span></div></div>
+  <div class="toolbar">
+    <span class="btn">＋ New snippet</span><span class="btn">New group…</span><span class="btn">⌨ Triggers…</span><span class="btn primary">💾 Save</span>
+    <span class="search">Search snippets or triggers</span><span class="spacer"></span>
+    <span class="pill">Espanso running · reloads after each save</span><span class="btn">⟳ Reload Espanso</span><span class="btn">Change folder</span>
+  </div>
+  <div class="main">
+    <div class="lib">
+      <div class="file">🗀 base <span class="count">22 snippets</span></div>
+      <div class="group">Ticketing &amp; Triage Templates</div>
+      <div class="snip"><span class="warn">⚠</span><div class="t">Jira bug report</div><div class="d">/jira</div></div>
+      <div class="snip"><span class="warn">⚠</span><div class="t">Jira: UAO issue</div><div class="d">/jirauao</div></div>
+      <div class="snip"><span class="warn">⚠</span><div class="t">Jira: plugin issue</div><div class="d">/jiraplugin</div></div>
+      <div class="group">Customer Communication</div>
+      <div class="snip"><span class="warn">⚠</span><div class="t">Closing note</div><div class="d">/close</div></div>
+      <div class="snip"><span class="warn">⚠</span><div class="t">Closing note, no reply</div><div class="d">/close2</div></div>
+    </div>
+    <div class="right"></div>
+  </div>
+  <div class="statusbar"><span>22 snippets in 1 file(s) · %APPDATA%\espanso\match</span><span class="spacer"></span><span>All changes saved</span></div>
+  <div class="dialog">
+    <div class="dt">Trigger settings</div>
+    <div class="db">
+      <div class="h">Only as a whole word</div>
+      <div class="muted" style="line-height:20px">A whole-word trigger fires only after you type a space, Enter or punctuation. Then /jira no longer fires while you are still typing /jirauao. The space or punctuation you typed stays after the text.</div>
+      <div class="card" style="margin-top:14px">
+        <div class="lbl">When to switch whole word on by itself</div>
+        <div class="radio"><span class="rb on"></span>Only where needed (recommended): when a trigger you add would block a longer one</div>
+        <div class="radio"><span class="rb"></span>Always: every new snippet starts as whole word</div>
+        <div class="radio"><span class="rb"></span>Never: new snippets fire the moment you finish the trigger</div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="lbl">All snippets</div>
+        <div>0 of 22 snippets are whole word now.</div>
+        <div style="margin-top:10px;display:flex;gap:8px"><span class="btn">Set all to whole word</span><span class="btn" style="opacity:.45">Set all to none</span></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="lbl">Triggers that block a longer trigger</div>
+        <div class="clash">/jira  blocks  /jirauao, /jiraplugin<br>/close  blocks  /close2<br>/csat  blocks  /csat2, /csat3</div>
+        <div style="margin-top:10px"><span class="btn">Whole word only where needed (/jira, /close, /csat)</span></div>
+      </div>
+      <div style="display:flex;align-items:center;margin-top:18px;gap:12px"><span class="muted" style="font-size:12.5px;flex:1">Nothing is written until you press Ctrl+S. Each save adds or removes one line per snippet and keeps a backup.</span><span class="btn primary" style="min-width:96px;justify-content:center">Close</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. HTML snippet with chips -->
+<div class="shot" id="html">
+  <div class="titlebar"><div class="logo">E</div>Espanso Simple Editor<div class="ctl"><span>—</span><span>☐</span><span>✕</span></div></div>
+  <div class="toolbar">
+    <span class="btn">＋ New snippet</span><span class="btn">New group…</span><span class="btn">⌨ Triggers…</span><span class="btn primary">💾 Save</span>
+    <span class="search">Search snippets or triggers</span><span class="spacer"></span>
+    <span class="pill">Espanso running · reloads after each save</span><span class="btn">⟳ Reload Espanso</span><span class="btn">Change folder</span>
+  </div>
+  <div class="main">
+    <div class="lib">
+      <div class="file">🗀 base <span class="count">23 snippets</span></div>
+      <div class="group">Customer Communication</div>
+      <div class="snip"><div class="t">Closing note</div><div class="d">/close</div></div>
+      <div class="snip sel"><div class="t">Weekly status mail</div><div class="d">/status</div></div>
+      <div class="snip"><div class="t">Satisfaction survey</div><div class="d">/csat</div></div>
+      <div class="group">Signatures</div>
+      <div class="snip"><div class="t">Signature</div><div class="d">/me</div></div>
+    </div>
+    <div class="right">
+      <div class="tabs"><div class="tab on">Weekly status mail <span class="x">✕</span></div></div>
+      <div class="editor">
+        <div class="row">
+          <div style="flex:1"><div class="lbl">Description</div><div class="field" style="font-size:15px;font-weight:600">Weekly status mail</div></div>
+          <div style="width:260px"><div class="lbl">Saved in</div><div class="combo">base › Customer Communication</div></div>
+          <span class="btn">⧉ Own window</span><span class="btn">🗑 Delete</span>
+        </div>
+        <div class="box">
+          <div class="boxhead">
+            <div class="combo" style="width:220px;height:32px">HTML (formatted paste)</div><span style="width:8px"></span>
+            <span class="fmtbtn" style="font-weight:700">B</span><span class="fmtbtn" style="font-style:italic;font-family:serif">I</span><span class="fmtbtn" style="font-family:var(--mono);font-size:12px">&lt;/&gt;</span>
+            <span class="sep"></span><span class="fmtbtn">H1</span><span class="fmtbtn">H2</span><span class="fmtbtn on">H3</span><span class="fmtbtn">¶</span>
+            <span class="sep"></span><span class="fmtbtn">•&nbsp; List</span><span class="fmtbtn">1.&nbsp; List</span>
+            <span class="spacer"></span><span class="btn">Insert ⌄</span>
+          </div>
+          <div class="text">
+            <h3>Weekly status, week of <span class="chip v"><b>DATE</b> 09/10/2026</span></h3>
+            Hi team,<br><br>
+            <b>Done this week:</b>
+            <ul><li><span class="chip v"><b>CLIPBOARD</b> (copied text)</span></li></ul>
+            <b>Next steps:</b>
+            <ol><li>Review open tickets</li><li>Update the runbook in <span class="code">docs/runbook.md</span></li></ol>
+            <br><i>Thanks,</i> <span class="chip c"><b>CURSOR</b></span>
+          </div>
+          <div class="hint">Pasted as formatted text (Espanso html:). Keeps its formatting in Jira, Outlook, Word and most web editors; plain-text boxes get the text only.</div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="lbl">Trigger</div>
+            <div style="display:flex;gap:6px;align-items:center"><span class="trig">/status <span class="x">✕</span></span><span class="field" style="width:150px;height:30px"></span><span class="btn">Add</span></div>
+            <div class="check"><span class="cb"></span>Only as a whole word<span class="link">All snippets…</span></div>
+            <div class="check"><span class="cb"></span>Follow the case I type (:Br gives Best regards)</div>
+            <div class="check"><span class="cb"></span>End with a line break</div>
+          </div>
+          <div class="card">
+            <div class="lbl">Espanso will paste (formatting not shown here)</div>
+            <div class="preview">Weekly status, week of 09/10/2026
+Hi team,
+
+Done this week:
+• <span class="ph">(clipboard)</span>
+Next steps:
+1. Review open tickets
+2. Update the runbook in docs/runbook.md</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="statusbar"><span>23 snippets in 1 file(s) · %APPDATA%\espanso\match</span><span class="spacer"></span><span>All changes saved</span></div>
+  <div class="toast"><span class="ok">✔</span><div><div class="ti">Saved base.yml</div><div class="bo">1 snippet change(s) written, backup kept. Espanso reloads by itself.</div></div></div>
+</div>
+
+<!-- 4. Load screen -->
+<div class="shot" id="load">
+  <div class="titlebar"><div class="logo">E</div>Espanso Simple Editor<div class="ctl"><span>—</span><span>☐</span><span>✕</span></div></div>
+  <div class="load">
+    <div class="loadcard">
+      <div style="font-size:24px;font-weight:700">Open your Espanso snippets</div>
+      <div class="muted" style="font-size:14px;margin:6px 0 20px">Pick the Espanso configuration to edit. Nothing on disk changes until you save.</div>
+      <div class="radio" style="align-items:flex-start"><span class="rb on" style="margin-top:2px"></span><div><div style="font-weight:600;font-size:14.5px">The folder Espanso uses</div><div style="font-family:var(--mono);margin-top:4px">%APPDATA%\espanso</div><div class="muted" style="font-size:12.5px;margin-top:2px">Reported by espanso path · 1 snippet file(s)</div></div></div>
+      <div class="radio" style="align-items:flex-start;margin-top:18px"><span class="rb" style="margin-top:2px"></span><div style="width:540px"><div style="font-weight:600;font-size:14.5px">Another Espanso folder</div><div style="display:flex;gap:8px;margin-top:6px"><div class="field" style="flex:1"></div><span class="btn">Browse…</span></div></div></div>
+      <div class="check" style="margin-top:22px"><span class="cb on">✓</span>Open this folder automatically next time</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px"><span class="btn primary" style="padding:10px 24px;font-size:14.5px">Load snippets</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
